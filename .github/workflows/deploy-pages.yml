@@ -1,4 +1,4 @@
-# Deploys the static site (index.html) to GitHub Pages on every push to main.
+# Deploys the static site to GitHub Pages on every push to main.
 name: Deploy to GitHub Pages
 
 on:
@@ -6,6 +6,7 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Least privilege: read the repo, write only to Pages
 permissions:
   contents: read
   pages: write
@@ -19,26 +20,36 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # Actions are pinned to full commit SHAs so a moved tag can't inject code.
+      # Dependabot (.github/dependabot.yml) proposes updates.
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
+      # Publish an explicit allow-list of files, never the whole repo
+      # (keeps .claude/, docs/ and any stray files off the public site).
       - name: Prepare site files
         run: |
-          mkdir -p _site
-          cp index.html _site/
+          mkdir -p _site/assets
+          cp index.html retirement-checklist.html sitemap.xml _site/
+          cp assets/site.css assets/site.js assets/theme.js \
+             assets/checklist.css assets/checklist.js \
+             assets/favicon.svg assets/og-image.png _site/assets/
 
       - name: Configure Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:
           path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

@@ -14,3 +14,6 @@ desktop.ini
 
 # Playwright MCP logs and snapshots
 .playwright-mcp/
+
+# Python bytecode (from skill scripts)
+__pycache__/

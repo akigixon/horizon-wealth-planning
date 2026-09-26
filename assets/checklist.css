@@ -1,0 +1,56 @@
+/* Styles for retirement-checklist.html (the lead magnet). Builds on site.css tokens. */
+.checklist-container { max-width: 52rem; }
+
+.checklist-title {
+  font-size: var(--step-4);
+  line-height: 1.05;
+  margin-bottom: var(--space-sm);
+}
+
+.checklist-group { margin-top: var(--space-lg); }
+
+.checklist-group h2 {
+  font-size: var(--step-2);
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--orange);
+  margin-bottom: 0.25rem;
+}
+
+.checklist-group li { border-bottom: 1px solid var(--line); }
+
+.checklist-group label {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+  padding-block: 0.8rem;
+  cursor: pointer;
+}
+
+.checklist-group input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  accent-color: var(--orange);
+  cursor: pointer;
+}
+
+.checklist-group label:has(input:checked) { color: var(--muted); }
+
+.checklist-cta {
+  margin-block: var(--space-xl) var(--space-md);
+  padding: var(--space-lg) var(--space-md);
+  border-radius: var(--radius);
+  background: var(--band);
+  color: var(--on-band);
+}
+.checklist-cta h2 { font-size: var(--step-2); margin-bottom: 0.5rem; }
+.checklist-cta p { color: var(--on-band-muted); margin-bottom: var(--space-md); }
+
+.print-btn { min-height: 42px; padding: 0.5rem 1rem; font-size: 0.95rem; }
+
+@media print {
+  .checklist-cta, .print-btn { display: none !important; }
+  .checklist-page { padding-block: 0; }
+  .checklist-group { break-inside: avoid; }
+}
