@@ -75,6 +75,36 @@
         "knowsAbout": ["Retirement planning", "CPF LIFE", "Supplementary Retirement Scheme", "Investment management", "Insurance planning", "Estate planning", "Tax planning"]
       },
       {
+        "@type": "Event",
+        "@id": "https://akigixon.github.io/horizon-wealth-planning/#lunch-talk-2026-09-30",
+        "name": "What is your retirement figure, and how to plan accordingly with the OODA framework",
+        "description": "A free lunchtime talk by Apex Wealth Planning in Singapore's CBD. Work out your retirement figure, then learn how to plan for it using the OODA loop: Observe, Orient, Decide, Act. Light refreshments are provided. Seats are limited.",
+        "startDate": "2026-09-30T12:30:00+08:00",
+        "endDate": "2026-09-30T13:30:00+08:00",
+        "eventStatus": "https://schema.org/EventScheduled",
+        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+        "isAccessibleForFree": true,
+        "location": {
+          "@type": "Place",
+          "name": "60 Cecil Street",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "60 Cecil Street",
+            "addressLocality": "Singapore",
+            "postalCode": "049709",
+            "addressCountry": "SG"
+          }
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "SGD",
+          "availability": "https://schema.org/LimitedAvailability",
+          "url": "https://akigixon.github.io/horizon-wealth-planning/"
+        },
+        "organizer": { "@id": "https://akigixon.github.io/horizon-wealth-planning/#business" }
+      },
+      {
         "@type": "WebSite",
         "@id": "https://akigixon.github.io/horizon-wealth-planning/#website",
         "url": "https://akigixon.github.io/horizon-wealth-planning/",
@@ -124,6 +154,14 @@
 
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- Lunch talk announcement (revealed by site.js only while the event is upcoming) -->
+  <div class="announce" id="announce" hidden>
+    <p class="container">
+      Free lunch talk: What is your retirement figure? Wed 30 Sept, 12:30pm at 60 Cecil St. Seats are limited.
+      <button type="button" class="announce-btn" id="announceBtn" aria-haspopup="dialog" aria-controls="invite">Get your invitation</button>
+    </p>
+  </div>
 
   <!-- ============================================================
        HEADER / STICKY NAVIGATION
@@ -870,6 +908,51 @@
     </div>
   </footer>
 
+  <!-- Lunch talk invitation: opens after 10 seconds of visible time on the page (see site.js section 10) -->
+  <dialog class="invite" id="invite" aria-labelledby="inviteTitle" aria-describedby="inviteDesc">
+    <button class="icon-btn invite-close" id="inviteClose" type="button" aria-label="Close invitation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+
+    <div class="invite-head">
+      <p class="invite-badge">Free lunch talk, limited seats</p>
+      <h2 id="inviteTitle">What is your retirement figure, and how to plan accordingly with the OODA framework</h2>
+      <p id="inviteDesc">Join our advisers over lunch in the CBD. Work out the figure you need to retire, then learn how to plan for it with the OODA loop: Observe, Orient, Decide, Act.</p>
+    </div>
+
+    <div class="invite-body" id="inviteBody">
+      <dl class="invite-details">
+        <div>
+          <dt>When</dt>
+          <dd><time datetime="2026-09-30T12:30+08:00">Wed 30 Sept 2026</time><br>12:30pm to 1:30pm</dd>
+        </div>
+        <div>
+          <dt>Where</dt>
+          <dd>60 Cecil St<br>Singapore 049709</dd>
+        </div>
+        <div>
+          <dt>Included</dt>
+          <dd>Light refreshments</dd>
+        </div>
+      </dl>
+
+      <form class="invite-form" id="inviteForm" novalidate aria-label="Get the lunch talk invitation">
+        <label for="inviteEmail">Your email</label>
+        <div class="invite-row">
+          <input class="form-control" type="email" id="inviteEmail" name="email" autocomplete="email"
+                 spellcheck="false" maxlength="254" placeholder="you@example.com" aria-describedby="inviteEmail-error inviteNote">
+          <button type="submit" class="btn btn-primary">Send my invitation</button>
+        </div>
+        <span class="error-msg" id="inviteEmail-error" aria-live="polite"></span>
+        <div class="hp-field" aria-hidden="true">
+          <label for="inviteWebsite">Leave this field empty</label>
+          <input type="text" id="inviteWebsite" name="website" tabindex="-1" autocomplete="off">
+        </div>
+        <p class="invite-note" id="inviteNote">Seats are limited. We'll email your invitation with a link to confirm your seat.</p>
+      </form>
+    </div>
+  </dialog>
+
   <!-- Checklist slide-in (shown once per visit, never to people who already signed up) -->
   <aside class="offer" id="offer" aria-labelledby="offerTitle">
     <h2 id="offerTitle">Is your retirement plan on track?</h2>
@@ -879,6 +962,75 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
   </aside>
+
+  <!-- WhatsApp chat widget ("Ollie" the otter). Without JS the launcher is a plain WhatsApp link. -->
+  <div class="chat" id="chat">
+    <section class="chat-panel" id="chatPanel" role="dialog" aria-modal="false" aria-labelledby="chatTitle" hidden>
+      <header class="chat-head">
+        <svg class="chat-avatar" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="9.5" cy="27" r="4.6" fill="#7A4B2E"/><circle cx="9.5" cy="27" r="2.2" fill="#C99672"/>
+          <circle cx="54.5" cy="27" r="4.6" fill="#7A4B2E"/><circle cx="54.5" cy="27" r="2.2" fill="#C99672"/>
+          <ellipse cx="32" cy="35" rx="25.5" ry="21" fill="#9A6644"/>
+          <ellipse cx="32" cy="42.5" rx="18" ry="11.5" fill="#F0D9C0"/>
+          <ellipse cx="18.5" cy="41" rx="3.4" ry="2.2" fill="#F4A38A" opacity="0.75"/>
+          <ellipse cx="45.5" cy="41" rx="3.4" ry="2.2" fill="#F4A38A" opacity="0.75"/>
+          <circle cx="23.5" cy="31" r="3.4" fill="#1F1A17"/><circle cx="24.6" cy="29.8" r="1.1" fill="#FFF"/>
+          <circle cx="40.5" cy="31" r="3.4" fill="#1F1A17"/><circle cx="41.6" cy="29.8" r="1.1" fill="#FFF"/>
+          <ellipse cx="32" cy="37.5" rx="4.2" ry="2.9" fill="#3A2A22"/>
+          <path d="M32 40.4v2.4M32 42.8c-1.6 2.2-4.2 2.2-5.6.4M32 42.8c1.6 2.2 4.2 2.2 5.6.4" fill="none" stroke="#3A2A22" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M24 40.5l-11-2.5M24 43l-11.5 0M24 45.5l-10.5 2.5M40 40.5l11-2.5M40 43l11.5 0M40 45.5l10.5 2.5" stroke="#6B4A36" stroke-width="1.1" stroke-linecap="round" opacity="0.75"/>
+        </svg>
+        <div>
+          <h2 id="chatTitle">Ollie from Apex Wealth</h2>
+          <p>We reply on WhatsApp</p>
+        </div>
+        <button class="icon-btn chat-close" id="chatClose" type="button" aria-label="Close chat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+
+      <div class="chat-body">
+        <p class="chat-bubble">Hi, I'm Ollie. Pick a topic or type a question and I'll connect you with an adviser on WhatsApp.</p>
+        <div class="chat-quick" role="group" aria-label="Quick topics">
+          <button type="button" class="chat-chip" data-wa="Hi Apex Wealth, I'd like to book a free consultation.">Book a free consultation</button>
+          <button type="button" class="chat-chip" data-wa="Hi Apex Wealth, I'd like to save a seat at the lunch talk on Wed 30 Sept, 12:30pm." data-event-only>Save my seat at the lunch talk</button>
+          <button type="button" class="chat-chip" data-wa="Hi Apex Wealth, I have a question about retirement planning.">Retirement planning</button>
+          <button type="button" class="chat-chip" data-wa="Hi Apex Wealth, I'd like my insurance reviewed.">Review my insurance</button>
+        </div>
+      </div>
+
+      <form class="chat-compose" id="chatForm" novalidate aria-label="Message us on WhatsApp">
+        <label for="chatMessage" class="visually-hidden">Your message</label>
+        <input class="form-control" type="text" id="chatMessage" name="message" maxlength="500"
+               autocomplete="off" placeholder="Type your question…">
+        <button type="submit" class="chat-send" aria-label="Send on WhatsApp">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </button>
+      </form>
+      <p class="chat-foot">Opens WhatsApp to chat with us at <a href="https://wa.me/6590019980" target="_blank" rel="noopener noreferrer">+65 9001 9980</a>.</p>
+    </section>
+
+    <a class="chat-launcher" id="chatLauncher" href="https://wa.me/6590019980" target="_blank" rel="noopener noreferrer"
+       aria-label="Chat with Apex Wealth on WhatsApp">
+      <svg class="chat-otter" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="9.5" cy="27" r="4.6" fill="#7A4B2E"/><circle cx="9.5" cy="27" r="2.2" fill="#C99672"/>
+          <circle cx="54.5" cy="27" r="4.6" fill="#7A4B2E"/><circle cx="54.5" cy="27" r="2.2" fill="#C99672"/>
+          <ellipse cx="32" cy="35" rx="25.5" ry="21" fill="#9A6644"/>
+          <ellipse cx="32" cy="42.5" rx="18" ry="11.5" fill="#F0D9C0"/>
+          <ellipse cx="18.5" cy="41" rx="3.4" ry="2.2" fill="#F4A38A" opacity="0.75"/>
+          <ellipse cx="45.5" cy="41" rx="3.4" ry="2.2" fill="#F4A38A" opacity="0.75"/>
+          <circle cx="23.5" cy="31" r="3.4" fill="#1F1A17"/><circle cx="24.6" cy="29.8" r="1.1" fill="#FFF"/>
+          <circle cx="40.5" cy="31" r="3.4" fill="#1F1A17"/><circle cx="41.6" cy="29.8" r="1.1" fill="#FFF"/>
+          <ellipse cx="32" cy="37.5" rx="4.2" ry="2.9" fill="#3A2A22"/>
+          <path d="M32 40.4v2.4M32 42.8c-1.6 2.2-4.2 2.2-5.6.4M32 42.8c1.6 2.2 4.2 2.2 5.6.4" fill="none" stroke="#3A2A22" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M24 40.5l-11-2.5M24 43l-11.5 0M24 45.5l-10.5 2.5M40 40.5l11-2.5M40 43l11.5 0M40 45.5l10.5 2.5" stroke="#6B4A36" stroke-width="1.1" stroke-linecap="round" opacity="0.75"/>
+        </svg>
+      <span class="chat-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.3 0 .5l-.3.5-.4.5c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 .9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>
+      </span>
+      <span class="chat-tip" aria-hidden="true">Chat with us</span>
+    </a>
+  </div>
 
   <!-- Back to top button -->
   <button class="back-to-top" id="backToTop" type="button" aria-label="Back to top">

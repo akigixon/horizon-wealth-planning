@@ -719,7 +719,8 @@
   let checklistInView = false;
 
   function canShowOffer() {
-    return !offerShown && !checklistInView && store.get('hw-lead') !== '1' && store.session('hw-offer') !== 'seen';
+    return !offerShown && !checklistInView && store.get('hw-lead') !== '1' && store.session('hw-offer') !== 'seen' &&
+      !inviteIsOpen() && store.session('hw-invite') !== 'seen'; // never stack with the lunch talk invitation
   }
 
   function showOffer() {
@@ -762,7 +763,195 @@
   });
 
   /* ==========================================================
-     10. ENQUIRY FORM VALIDATION & SUBMISSION
+     10. LUNCH TALK INVITATION
+     Opens after 10 seconds of *visible* time on the page, once per
+     visit, and stops appearing once the event date has passed.
+     Dismissing it snoozes it for a few days; signing up hides it for good.
+     To run a new event: update the dialog copy, the Event JSON-LD and
+     EVENT_ENDS_AT below.
+     ========================================================== */
+  const EVENT_ENDS_AT = new Date('2026-09-30T12:30:00+08:00').getTime(); // talk starts (Singapore time): sign-ups close
+  const INVITE_DELAY_MS = 10000;
+  const INVITE_SNOOZE_MS = 3 * 24 * 60 * 60 * 1000;
+
+  const invite = document.getElementById('invite');
+  const inviteBody = document.getElementById('inviteBody');
+  const inviteForm = document.getElementById('inviteForm');
+  const inviteEmail = document.getElementById('inviteEmail');
+  const announce = document.getElementById('announce');
+  const eventUpcoming = Date.now() < EVENT_ENDS_AT;
+  const dialogSupported = typeof invite.showModal === 'function';
+
+  function inviteIsOpen() { return invite.open; }
+
+  function inviteAllowedAutomatically() {
+    const snoozedUntil = Number(store.get('hw-invite-snooze')) || 0;
+    return eventUpcoming && dialogSupported &&
+      store.get('hw-invite') !== 'registered' &&
+      store.session('hw-invite') !== 'seen' &&
+      Date.now() > snoozedUntil;
+  }
+
+  function openInvite() {
+    if (!dialogSupported || invite.open) return;
+    hideOffer();
+    setMenu(false);
+    store.session('hw-invite', 'seen');
+    invite.showModal();
+  }
+
+  // Don't interrupt someone who is typing into a form or has the mobile menu open
+  function visitorIsBusy() {
+    const active = document.activeElement;
+    return Boolean(active && active.closest('form') && active.matches('input, textarea, select')) ||
+      navMenu.classList.contains('open');
+  }
+
+  if (eventUpcoming && dialogSupported && store.get('hw-invite') !== 'registered') {
+    announce.hidden = false;
+    document.getElementById('announceBtn').addEventListener('click', openInvite);
+  }
+
+  if (inviteAllowedAutomatically()) {
+    let visibleMs = 0;
+    let lastTick = Date.now();
+    const inviteTimer = setInterval(() => {
+      const now = Date.now();
+      if (!document.hidden) visibleMs += now - lastTick; // time in a background tab doesn't count
+      lastTick = now;
+      if (visibleMs < INVITE_DELAY_MS || visitorIsBusy()) return;
+      clearInterval(inviteTimer);
+      if (inviteAllowedAutomatically()) openInvite();
+    }, 500);
+  }
+
+  document.getElementById('inviteClose').addEventListener('click', () => invite.close('dismissed'));
+
+  // Clicking the dimmed backdrop (outside the dialog box) closes it
+  invite.addEventListener('click', e => {
+    if (e.target !== invite) return;
+    const r = invite.getBoundingClientRect();
+    const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    if (!inside) invite.close('dismissed');
+  });
+
+  invite.addEventListener('close', () => {
+    if (store.get('hw-invite') !== 'registered') store.set('hw-invite-snooze', String(Date.now() + INVITE_SNOOZE_MS));
+  });
+
+  function showInviteSuccess(email) {
+    const box = document.createElement('div');
+    box.className = 'invite-success';
+    box.setAttribute('role', 'status');
+    box.setAttribute('tabindex', '-1');
+
+    const h = document.createElement('h3');
+    h.textContent = 'Your seat request is in';
+    const p = document.createElement('p');
+    p.textContent = `We'll send your invitation for Wednesday, 30 September, 12:30pm to 1:30pm, to ${email}. Check your inbox and confirm your seat, as places are limited.`; // textContent: never render input as HTML
+
+    const done = document.createElement('button');
+    done.type = 'button';
+    done.className = 'btn btn-primary';
+    done.textContent = 'Done';
+    done.addEventListener('click', () => invite.close('registered'));
+
+    box.append(h, p, done);
+    inviteBody.replaceChildren(box);
+    box.focus();
+  }
+
+  inviteForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const value = clean(inviteEmail.value, 254);
+    const error = !value ? 'Enter your email so we can send your invitation.'
+      : !EMAIL_RE.test(value) ? 'Check your email address, for example name@example.com.' : '';
+
+    document.getElementById('inviteEmail-error').textContent = error;
+    inviteEmail.classList.toggle('invalid', Boolean(error));
+    inviteEmail.setAttribute('aria-invalid', String(Boolean(error)));
+    if (error) { inviteEmail.focus(); return; }
+
+    store.set('hw-invite', 'registered');
+    if (!looksAutomated(inviteForm) && !isThrottled('invite')) {
+      console.log('Lunch talk registration:', JSON.stringify({ email: value, event: '2026-09-30 lunch talk', submittedAt: new Date().toISOString() }));
+    }
+    showInviteSuccess(value);
+    announce.hidden = true;
+  });
+
+  inviteEmail.addEventListener('input', () => {
+    if (!inviteEmail.classList.contains('invalid')) return;
+    inviteEmail.classList.remove('invalid');
+    inviteEmail.removeAttribute('aria-invalid');
+    document.getElementById('inviteEmail-error').textContent = '';
+  });
+
+  /* ==========================================================
+     11. WHATSAPP CHAT WIDGET ("Ollie" the otter)
+     Without JS the launcher is a plain wa.me link. With JS it opens a
+     small panel; every choice opens WhatsApp with the message pre-filled.
+     The number lives in WHATSAPP_NUMBER and in the two wa.me links in index.html.
+     ========================================================== */
+  const WHATSAPP_NUMBER = '6590019980'; // country code + number, digits only
+  const chatLauncher = document.getElementById('chatLauncher');
+  const chatPanel = document.getElementById('chatPanel');
+  const chatForm = document.getElementById('chatForm');
+  const chatMessage = document.getElementById('chatMessage');
+
+  // The user's text only ever travels as an encoded URL parameter to WhatsApp
+  function openWhatsApp(text) {
+    const url = `https://wa.me/${WHATSAPP_NUMBER}` + (text ? `?text=${encodeURIComponent(text)}` : '');
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  function setChat(open) {
+    chatPanel.hidden = !open;
+    chatLauncher.setAttribute('aria-expanded', String(open));
+    chatLauncher.setAttribute('aria-label', open ? 'Close chat' : 'Chat with Apex Wealth on WhatsApp');
+    if (open) {
+      hideOffer();
+      chatPanel.querySelector('.chat-chip:not([hidden])').focus();
+    }
+  }
+
+  chatLauncher.setAttribute('role', 'button');
+  chatLauncher.setAttribute('aria-controls', 'chatPanel');
+  chatLauncher.setAttribute('aria-expanded', 'false');
+  chatLauncher.addEventListener('click', e => {
+    e.preventDefault();
+    setChat(chatPanel.hidden);
+  });
+  chatLauncher.addEventListener('keydown', e => {
+    if (e.key === ' ') { e.preventDefault(); setChat(chatPanel.hidden); } // buttons also respond to Space
+  });
+
+  document.getElementById('chatClose').addEventListener('click', () => { setChat(false); chatLauncher.focus(); });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !chatPanel.hidden) { setChat(false); chatLauncher.focus(); }
+  });
+
+  document.addEventListener('click', e => {
+    if (!chatPanel.hidden && !e.target.closest('#chat')) setChat(false);
+  });
+
+  // The lunch talk chip only makes sense while sign-ups are open
+  chatPanel.querySelectorAll('[data-event-only]').forEach(chip => { chip.hidden = !eventUpcoming; });
+
+  chatPanel.querySelectorAll('.chat-chip').forEach(chip => {
+    chip.addEventListener('click', () => openWhatsApp(chip.getAttribute('data-wa')));
+  });
+
+  chatForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const text = clean(chatMessage.value, 500);
+    openWhatsApp(text);
+    chatForm.reset();
+  });
+
+  /* ==========================================================
+     12. ENQUIRY FORM VALIDATION & SUBMISSION
      ========================================================== */
   const form = document.getElementById('enquiryForm');
   const formCard = document.getElementById('formCard');
@@ -912,7 +1101,7 @@
   }
 
   /* ==========================================================
-     11. NEWSLETTER SIGNUP
+     13. NEWSLETTER SIGNUP
      ========================================================== */
   const newsletterForm = document.getElementById('newsletterForm');
   const newsletterEmail = document.getElementById('newsletterEmail');
@@ -952,7 +1141,7 @@
   });
 
   /* ==========================================================
-     12. FOOTER YEAR
+     14. FOOTER YEAR
      ========================================================== */
   document.getElementById('currentYear').textContent = new Date().getFullYear();
 })();

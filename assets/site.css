@@ -1425,8 +1425,8 @@ textarea.form-control {
    ========================================================== */
 .back-to-top {
   position: fixed;
-  right: max(1.25rem, env(safe-area-inset-right));
-  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  right: calc(max(1.25rem, env(safe-area-inset-right)) + 8px); /* centred over the 64px otter */
+  bottom: calc(max(1.25rem, env(safe-area-inset-bottom)) + 76px);
   z-index: 900;
   width: 48px;
   height: 48px;
@@ -1451,7 +1451,7 @@ textarea.form-control {
   position: fixed;
   left: max(1rem, env(safe-area-inset-left));
   right: max(1rem, env(safe-area-inset-right));
-  bottom: max(1rem, env(safe-area-inset-bottom));
+  bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 80px); /* clears the chat otter on phones */
   z-index: 950;
   max-width: 380px;
   padding: var(--space-md);
@@ -1478,6 +1478,278 @@ textarea.form-control {
   color: var(--muted);
 }
 .offer-close:hover { background: var(--surface-2); }
+
+/* Lunch talk announcement bar */
+.announce {
+  background: var(--orange);
+  color: var(--on-orange);
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+.announce[hidden] { display: none; }
+.announce p { padding-block: 0.55rem; text-align: center; }
+.announce-btn {
+  margin-left: 0.35rem;
+  padding: 0.35rem 0.1rem; /* keeps a comfortable tap target inside the line */
+  border: none;
+  background: none;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.announce-btn:focus-visible { outline-color: var(--on-orange); }
+
+/* Lunch talk invitation dialog */
+.invite {
+  width: min(460px, calc(100% - 2rem));
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.invite[open] { animation: inviteIn 0.35s var(--ease) both; }
+.invite::backdrop { background: rgba(11, 19, 22, 0.6); }
+
+@keyframes inviteIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+}
+
+.invite-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 1;
+}
+
+.invite-head {
+  padding: var(--space-lg) var(--space-md) var(--space-md);
+  padding-right: 3.5rem;
+  background: var(--band);
+  color: var(--on-band);
+  border-bottom: 3px solid var(--orange);
+}
+.invite-badge {
+  display: inline-block;
+  margin-bottom: 0.6rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: var(--radius-pill);
+  background: var(--orange);
+  color: var(--on-orange);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.invite-head h2 { font-size: var(--step-2); margin-bottom: 0.5rem; }
+.invite-head p:last-child { color: var(--on-band-muted); font-size: 0.97rem; }
+
+.invite-body { padding: var(--space-md); }
+
+.invite-details {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--line);
+}
+.invite-details dt { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.15rem; }
+.invite-details dd { font-size: 0.93rem; font-weight: 600; line-height: 1.4; }
+
+.invite-form label { display: block; font-weight: 600; font-size: 0.92rem; margin-bottom: 0.4rem; }
+.invite-row { display: grid; gap: 0.6rem; }
+.invite-note { margin-top: 0.6rem; font-size: 0.85rem; color: var(--muted); }
+
+.invite-success { text-align: center; padding-block: var(--space-sm); }
+.invite-success:focus { outline: none; }
+.invite-success h3 { font-size: var(--step-2); margin-bottom: 0.5rem; }
+.invite-success p { color: var(--muted); margin-bottom: var(--space-md); }
+
+@media (max-width: 480px) {
+  .invite-head { padding: var(--space-md); padding-right: 3.25rem; }
+  .invite-head h2 { font-size: 1.3rem; }
+  .invite-head p:last-child { font-size: 0.9rem; }
+  .invite-body { padding: var(--space-sm) var(--space-md) var(--space-md); }
+  .invite-details { gap: 0.6rem var(--space-sm); margin-bottom: var(--space-sm); padding-bottom: var(--space-sm); }
+}
+
+@media (max-width: 400px) {
+  .invite-details { grid-template-columns: 1fr 1fr; }
+}
+
+/* WhatsApp chat widget: "Ollie" the otter */
+.chat {
+  position: fixed;
+  right: max(1.25rem, env(safe-area-inset-right));
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  z-index: 960;
+}
+
+.chat-launcher {
+  position: relative;
+  display: block;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #F6E7D6;
+  box-shadow: 0 10px 24px rgba(23, 37, 43, 0.28), 0 0 0 3px var(--orange);
+  animation: otterBob 3.2s ease-in-out infinite;
+  transition: transform var(--transition);
+}
+.chat-launcher:hover { transform: scale(1.06); }
+.chat-launcher[aria-expanded="true"] { animation: none; }
+.chat-otter { width: 100%; height: 100%; display: block; border-radius: 50%; }
+
+@keyframes otterBob {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -5px; }
+}
+
+.chat-badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #25D366; /* WhatsApp green, so people know where the chat goes */
+  color: #fff;
+  border: 2px solid var(--surface);
+}
+.chat-badge svg { width: 14px; height: 14px; }
+
+.chat-tip {
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  translate: 0 -50%;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-pill);
+  background: var(--band);
+  color: var(--on-band);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+}
+.chat-launcher:hover .chat-tip,
+.chat-launcher:focus-visible .chat-tip { opacity: 1; }
+.chat-launcher[aria-expanded="true"] .chat-tip { opacity: 0; }
+
+.chat-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 14px);
+  width: min(350px, calc(100vw - 2rem));
+  max-height: min(560px, calc(100dvh - 120px));
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  transform-origin: bottom right;
+  animation: chatIn 0.25s var(--ease) both;
+}
+.chat-panel[hidden] { display: none; }
+
+@keyframes chatIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+}
+
+.chat-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 0.75rem 0.85rem 1rem;
+  background: var(--band);
+  color: var(--on-band);
+  border-bottom: 3px solid var(--orange);
+}
+.chat-avatar { width: 42px; height: 42px; flex-shrink: 0; border-radius: 50%; background: #F6E7D6; }
+.chat-head h2 { font-family: var(--font-body); font-size: 1rem; font-weight: 700; letter-spacing: 0; }
+.chat-head p { font-size: 0.82rem; color: var(--on-band-muted); }
+.chat-close { margin-left: auto; }
+
+.chat-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem;
+  display: grid;
+  gap: 0.6rem;
+  align-content: start;
+  background: var(--bg);
+}
+
+.chat-bubble {
+  max-width: 90%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 4px 14px 14px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 0.93rem;
+  line-height: 1.45;
+}
+
+.chat-quick { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.25rem; }
+.chat-chip {
+  min-height: 40px;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--orange);
+  background: var(--surface);
+  color: var(--orange-text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition), color var(--transition);
+}
+.chat-chip:hover { background: var(--orange); color: var(--on-orange); }
+.chat-chip[hidden] { display: none; }
+
+.chat-compose {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+.chat-compose .form-control { min-height: 44px; padding: 0.55rem 0.85rem; }
+.chat-send {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--orange);
+  color: var(--on-orange);
+  cursor: pointer;
+  transition: background-color var(--transition);
+}
+.chat-send:hover { background: var(--orange-hover); }
+.chat-send svg { width: 19px; height: 19px; }
+
+.chat-foot {
+  padding: 0 0.75rem 0.75rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.chat-foot a { color: var(--orange-text); font-weight: 600; }
 
 /* ==========================================================
    15. SCROLL REVEAL (used sparingly)
@@ -1528,7 +1800,7 @@ textarea.form-control {
   .lead-form { grid-template-columns: 1fr 1fr; }
   .lead-form .full { grid-column: 1 / -1; }
 
-  .offer { left: auto; }
+  .offer { right: auto; bottom: max(1.25rem, env(safe-area-inset-bottom)); } /* bottom-left, away from the chat otter */
 }
 
 /* ==========================================================
@@ -1629,9 +1901,10 @@ textarea.form-control {
     transition-duration: 0.01ms !important;
   }
   .js .reveal { opacity: 1; transform: none; }
+  .chat-launcher { animation: none; }
 }
 
 @media print {
-  .site-header, .back-to-top, .offer, .hero-actions, .horizon { display: none !important; }
+  .site-header, .back-to-top, .offer, .chat, .announce, .hero-actions, .horizon { display: none !important; }
   body { background: #fff; color: #000; }
 }
