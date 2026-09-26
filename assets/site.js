@@ -1,5 +1,5 @@
 /* ==========================================================
-   Horizon Wealth Planning: site behaviour
+   Apex Wealth Planning: site behaviour
    Plain vanilla JS, no dependencies. Loaded with `defer` from an
    external file so the Content-Security-Policy can forbid inline script.
    Never insert user input with innerHTML: always use textContent.
@@ -217,6 +217,7 @@
   const NOMINAL_RETURN = 0.05;
   const INFLATION = 0.025;
   const PLAN_TO_AGE = 90;
+  const CPF_LIFE_AGE = 65;     // CPF LIFE payouts start at 65 at the earliest
   const monthlyRate = Math.pow((1 + NOMINAL_RETURN) / (1 + INFLATION), 1 / 12) - 1;
 
   const calcForm = document.getElementById('calcForm');
@@ -228,8 +229,10 @@
     gap: document.getElementById('calcGap'),
     gapLabel: document.getElementById('gapLabel'),
     extra: document.getElementById('calcExtra'),
-    extraLabel: document.getElementById('extraLabel'),
     projLabel: document.getElementById('projLabel'),
+    neededLabel: document.getElementById('neededLabel'),
+    earliest: document.getElementById('calcEarliest'),
+    earliestNote: document.getElementById('calcEarliestNote'),
     summary: document.getElementById('calcSummary')
   };
 
@@ -257,40 +260,81 @@
     };
   }
 
-  function markInvalid(names) {
-    ['age', 'retireAge', 'savings', 'monthly', 'income', 'cpf'].forEach(name => {
-      const input = calcForm.elements[name];
-      const bad = names.includes(name);
-      input.parentElement.classList.toggle('invalid', bad);
-      input.setAttribute('aria-invalid', String(bad));
-    });
+  /* Sliders: show the value, fill the track up to the thumb, and give
+     screen readers a spoken value such as "S$80,000" or "65 years" */
+  const sliders = Array.from(calcForm.querySelectorAll('.calc-range'));
+  const ageSlider = calcForm.elements.age;
+  const retireSlider = calcForm.elements.retireAge;
+
+  function formatSlider(input) {
+    const value = Number(input.value);
+    const atMax = value >= Number(input.max) ? '+' : ''; // e.g. "S$2,000,000+" for larger balances
+    return input.dataset.format === 'money' ? money(value) + atMax : `${value} years`;
+  }
+
+  function paintSlider(input) {
+    const pct = (Number(input.value) - Number(input.min)) / (Number(input.max) - Number(input.min)) * 100;
+    input.style.setProperty('--fill', `${pct}%`);
+    const text = formatSlider(input);
+    document.getElementById(`${input.id}Value`).textContent =
+      input.dataset.format === 'money' ? text : input.value;
+    input.setAttribute('aria-valuetext', text);
+  }
+
+  // Retirement must stay after today's age: moving one slider nudges the other
+  function keepAgesApart(changed) {
+    const age = Number(ageSlider.value);
+    const retire = Number(retireSlider.value);
+    if (retire > age) return;
+    if (changed === ageSlider) retireSlider.value = Math.min(age + 1, Number(retireSlider.max));
+    else ageSlider.value = Math.max(retire - 1, Number(ageSlider.min));
+    // At the extremes (age 75, retire 40) nudging may not be enough, so re-check
+    if (Number(retireSlider.value) <= Number(ageSlider.value)) ageSlider.value = Number(retireSlider.value) - 1;
+    paintSlider(ageSlider);
+    paintSlider(retireSlider);
+  }
+
+  // Monthly withdrawal from savings at a given age (in months): the full income
+  // until CPF LIFE starts, then the income minus the CPF LIFE payout
+  function withdrawalAt(v, ageInMonths) {
+    const cpf = ageInMonths >= CPF_LIFE_AGE * 12 ? v.cpf : 0;
+    return Math.max(0, v.income - cpf);
+  }
+
+  // Savings you'd have at age `retireAge` if you keep saving until then
+  function balanceAt(v, retireAge) {
+    const growth = Math.pow(1 + monthlyRate, (retireAge - v.age) * 12);
+    return v.savings * growth + v.monthly * (growth - 1) / monthlyRate;
+  }
+
+  // Lump sum needed at `retireAge` to fund withdrawals until PLAN_TO_AGE
+  function neededAt(v, retireAge) {
+    let total = 0;
+    let discount = 1;
+    for (let m = retireAge * 12; m < PLAN_TO_AGE * 12; m++) {
+      discount /= 1 + monthlyRate;
+      total += withdrawalAt(v, m) * discount;
+    }
+    return total;
+  }
+
+  // Earliest age (from today) at which projected savings cover what's needed; null if none before PLAN_TO_AGE
+  function earliestRetirementAge(v) {
+    for (let r = v.age; r < PLAN_TO_AGE; r++) {
+      if (balanceAt(v, r) >= neededAt(v, r)) return r;
+    }
+    return null;
   }
 
   function calculate() {
     const v = readInputs();
-    const missing = Object.keys(v).filter(k => Number.isNaN(v[k]));
-
-    if (missing.length) {
-      markInvalid(missing);
-      calcError.textContent = 'Fill in every field with a number to see your result.';
+    if (Object.values(v).some(Number.isNaN) || v.retireAge <= v.age || v.retireAge >= PLAN_TO_AGE) {
+      calcError.textContent = 'Move the sliders so your retirement age is later than your current age.';
       return;
     }
-    if (v.retireAge <= v.age) {
-      markInvalid(['retireAge']);
-      calcError.textContent = 'Your retirement age needs to be later than your current age.';
-      return;
-    }
-    if (v.retireAge >= PLAN_TO_AGE) {
-      markInvalid(['retireAge']);
-      calcError.textContent = `Choose a retirement age below ${PLAN_TO_AGE}.`;
-      return;
-    }
-    markInvalid([]);
     calcError.textContent = '';
 
     const monthsToRetire = (v.retireAge - v.age) * 12;
-    const monthsInRetirement = (PLAN_TO_AGE - v.retireAge) * 12;
-    const draw = Math.max(0, v.income - v.cpf);
 
     // Year-by-year balance for the chart
     const points = [{ age: v.age, balance: v.savings }];
@@ -302,42 +346,62 @@
     const projected = balance;
 
     let runOutAge = null;
-    for (let m = 1; m <= monthsInRetirement; m++) {
-      balance = balance * (1 + monthlyRate) - draw;
-      if (balance <= 0 && runOutAge === null) runOutAge = v.retireAge + Math.floor(m / 12);
-      if (m % 12 === 0) points.push({ age: v.retireAge + m / 12, balance: Math.max(0, balance) });
+    for (let m = v.retireAge * 12; m < PLAN_TO_AGE * 12; m++) {
+      balance = balance * (1 + monthlyRate) - withdrawalAt(v, m);
+      if (balance <= 0 && runOutAge === null) runOutAge = Math.floor((m + 1) / 12);
+      if ((m + 1) % 12 === 0) points.push({ age: (m + 1) / 12, balance: Math.max(0, balance) });
     }
 
-    const needed = draw * (1 - Math.pow(1 + monthlyRate, -monthsInRetirement)) / monthlyRate;
+    const needed = neededAt(v, v.retireAge);
     const gap = needed - projected;
     const growth = (Math.pow(1 + monthlyRate, monthsToRetire) - 1) / monthlyRate;
     const extraMonthly = gap > 0 ? gap / growth : 0;
+    const earliest = earliestRetirementAge(v);
 
-    lastResult = { v, points, projected, needed, gap, runOutAge };
+    lastResult = { v, points, projected, needed, gap, runOutAge, earliest };
+
+    // Headline: the earliest age you could retire
+    if (earliest === null) {
+      out.earliest.textContent = `Not before ${PLAN_TO_AGE}`;
+      out.earliestNote.textContent = 'at your current savings rate';
+    } else if (earliest === v.age) {
+      out.earliest.textContent = 'Now';
+      out.earliestNote.textContent = 'your savings already cover it';
+    } else {
+      out.earliest.textContent = `Age ${earliest}`;
+      const years = earliest - v.age;
+      out.earliestNote.textContent = `${years} ${years === 1 ? 'year' : 'years'} from now`;
+    }
+
+    const earliestText = earliest === null ? `not before ${PLAN_TO_AGE}`
+      : earliest === v.age ? 'right now' : `at age ${earliest}`;
+    const cpfNote = v.retireAge < CPF_LIFE_AGE
+      ? `, with CPF LIFE adding ${money(v.cpf)} a month from ${CPF_LIFE_AGE}`
+      : ` including your ${money(v.cpf)} CPF LIFE payout`;
 
     out.projLabel.textContent = `At ${v.retireAge} you're on track to have`;
     out.projected.textContent = money(projected);
+    out.neededLabel.textContent = `You'll need at ${v.retireAge}`;
     out.needed.textContent = money(needed);
 
     if (gap > 0) {
       out.gapLabel.textContent = 'Your gap';
       out.gap.textContent = money(gap);
-      out.extraLabel.textContent = 'Extra to save a month';
       out.extra.textContent = money(extraMonthly);
       out.summary.textContent =
-        `At this rate your savings would run out around age ${runOutAge}. ` +
-        `To draw ${money(draw)} a month on top of CPF LIFE until ${PLAN_TO_AGE}, you'd need about ` +
-        `${money(needed)} at ${v.retireAge}, which is ${money(gap)} more than you're on track for. ` +
+        `At your current pace, the earliest you could retire is ${earliestText}. ` +
+        `If you retire at ${v.retireAge}, your savings would run out around age ${runOutAge}. ` +
+        `To have ${money(v.income)} a month until ${PLAN_TO_AGE}${cpfNote}, you'd need about ${money(needed)} ` +
+        `at ${v.retireAge}, which is ${money(gap)} more than you're on track for. ` +
         `Saving roughly ${money(extraMonthly)} more each month would close it.`;
     } else {
       out.gapLabel.textContent = 'Your surplus';
       out.gap.textContent = money(-gap);
-      out.extraLabel.textContent = 'Extra to save a month';
       out.extra.textContent = money(0);
       out.summary.textContent =
-        `You're on track. Your projected ${money(projected)} at ${v.retireAge} covers the ` +
-        `${money(needed)} needed to draw ${money(draw)} a month until ${PLAN_TO_AGE}, with ${money(-gap)} to spare. ` +
-        'A plan can help you protect that position and decide how to use the surplus.';
+        `You're on track, and you could retire as early as ${earliest === v.age ? 'now' : `age ${earliest}`}. ` +
+        `Retiring at ${v.retireAge}, your projected ${money(projected)} covers the ${money(needed)} needed for ` +
+        `${money(v.income)} a month until ${PLAN_TO_AGE}${cpfNote}, leaving ${money(-gap)} to spare.`;
     }
 
     drawChart();
@@ -375,8 +439,16 @@
       calcChart.appendChild(svgEl('text', { class: 'chart-axis-label', x: x(a), y: H - 8, 'text-anchor': 'middle' }, String(a)));
     }
 
-    // Retirement marker
+    // Planned retirement marker
     calcChart.appendChild(svgEl('line', { class: 'chart-retire', x1: x(v.retireAge), x2: x(v.retireAge), y1: padT, y2: H - padB }));
+
+    // Earliest possible retirement marker
+    const { earliest } = lastResult;
+    if (earliest !== null && earliest > v.age) {
+      const ex = x(earliest);
+      calcChart.appendChild(svgEl('line', { class: 'chart-earliest', x1: ex, x2: ex, y1: padT + 18, y2: H - padB }));
+      calcChart.appendChild(svgEl('text', { class: 'chart-earliest-label', x: ex, y: padT + 10, 'text-anchor': ex > W - 90 ? 'end' : 'middle' }, `Earliest: ${earliest}`));
+    }
 
     // Balance area + line
     const linePath = points.map((p, i) => `${i ? 'L' : 'M'}${x(p.age).toFixed(1)},${y(p.balance).toFixed(1)}`).join(' ');
@@ -391,12 +463,16 @@
     calcChart.appendChild(svgEl('text', { class: 'chart-need-label', x: padL + 6, y: needY - 8 }, `Needed at ${v.retireAge}: ${moneyShort(needed)}`));
   }
 
-  let calcTimer = null;
-  calcForm.addEventListener('input', () => {
-    clearTimeout(calcTimer);
-    calcTimer = setTimeout(calculate, 150);
+  let calcFrame = 0;
+  calcForm.addEventListener('input', e => {
+    if (!e.target.classList.contains('calc-range')) return;
+    if (e.target === ageSlider || e.target === retireSlider) keepAgesApart(e.target);
+    paintSlider(e.target);
+    cancelAnimationFrame(calcFrame);
+    calcFrame = requestAnimationFrame(calculate); // updates live while dragging
   });
   calcForm.addEventListener('submit', e => { e.preventDefault(); calculate(); });
+  sliders.forEach(paintSlider);
   calculate();
 
   /* Links with data-interest pre-select that option in the enquiry form */

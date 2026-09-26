@@ -1,5 +1,5 @@
 /* ==========================================================
-   Horizon Wealth Planning: site styles
+   Apex Wealth Planning: site styles
    Loaded as an external file so the Content-Security-Policy in
    index.html can forbid inline styles and scripts.
    ========================================================== */
@@ -596,45 +596,93 @@ ul, ol { list-style: none; }
 
 .calc-form {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-sm) var(--space-md);
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
   align-content: start;
-  align-items: end; /* keeps inputs level when labels wrap to two lines */
 }
 
-.calc-field { display: grid; gap: 0.35rem; min-width: 0; }
+.calc-field { display: grid; gap: 0.6rem; min-width: 0; }
 .calc-field.full { grid-column: 1 / -1; }
 
+.calc-field-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
 .calc-field label {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
 }
 
-.input-affix {
-  display: flex;
-  align-items: center;
-  border: 1.5px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--bg);
-  transition: border-color var(--transition);
-}
-.input-affix:focus-within { border-color: var(--orange); }
-.input-affix span {
-  padding-left: 0.8rem;
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-.input-affix input {
-  width: 100%;
-  min-width: 0;
-  padding: 0.7rem 0.8rem 0.7rem 0.4rem;
-  border: none;
-  background: transparent;
+.calc-value {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
+  color: var(--orange-text);
+  white-space: nowrap;
 }
-.input-affix input:focus { outline: none; }
-.input-affix.no-prefix input { padding-left: 0.8rem; }
-.input-affix.invalid { border-color: var(--error); }
+
+/* Range sliders: --fill (0–100%) is set by site.js so the track fills up to the thumb */
+.calc-range {
+  --fill: 50%;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;              /* generous hit area; the visible track is thinner */
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;       /* horizontal drags move the slider, vertical still scrolls */
+}
+
+.calc-range:focus { outline: none; }
+
+.calc-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(to right, var(--orange) var(--fill), var(--line) var(--fill));
+}
+
+.calc-range::-moz-range-track {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--line);
+}
+
+.calc-range::-moz-range-progress {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--orange);
+}
+
+.calc-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  margin-top: -10px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 3px solid var(--orange);
+  box-shadow: 0 2px 8px rgba(23, 37, 43, 0.2);
+  transition: transform var(--transition);
+}
+
+.calc-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 3px solid var(--orange);
+  box-shadow: 0 2px 8px rgba(23, 37, 43, 0.2);
+}
+
+.calc-range:active::-webkit-slider-thumb { transform: scale(1.12); }
+
+.calc-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--orange-soft), 0 0 0 6px var(--orange); }
+.calc-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--orange-soft), 0 0 0 6px var(--orange); }
 
 .calc-assumptions {
   grid-column: 1 / -1;
@@ -670,6 +718,27 @@ ul, ol { list-style: none; }
 }
 
 .calc-figure.is-gap { background: var(--orange-soft); }
+
+/* The headline answer: earliest age you could retire */
+.calc-figure.is-headline {
+  grid-column: 1 / -1;
+  background: var(--band);
+  color: var(--on-band);
+}
+.calc-figure.is-headline dt { color: var(--on-band-muted); }
+.calc-figure.is-headline dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  font-size: clamp(1.9rem, 4.5vw, 2.6rem);
+}
+.calc-figure.is-headline #calcEarliest { color: var(--orange); }
+.calc-figure-note {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--on-band-muted);
+}
 .calc-figure.is-gap dd { color: var(--orange-text); }
 
 .calc-summary { font-size: 1.05rem; }
@@ -682,6 +751,8 @@ ul, ol { list-style: none; }
 .chart-line { stroke: var(--orange); stroke-width: 3; fill: none; stroke-linejoin: round; }
 .chart-area { fill: var(--orange-soft); }
 .chart-retire { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 4; }
+.chart-earliest { stroke: var(--orange-text); stroke-width: 1.5; }
+.chart-earliest-label { fill: var(--orange-text); font-size: 12px; font-weight: 600; font-family: var(--font-body); }
 
 .calc-actions {
   display: flex;
@@ -1297,6 +1368,12 @@ textarea.form-control {
 }
 
 .footer-about p { margin-block: var(--space-sm) var(--space-md); max-width: 30rem; }
+.footer-about .footer-slogan {
+  margin-bottom: 0;
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  color: var(--on-band);
+}
 
 .footer-links li + li { margin-top: 0.5rem; }
 
@@ -1507,7 +1584,7 @@ textarea.form-control {
   .hero .container { position: relative; }
   .hero-grid { padding-bottom: var(--space-xl); max-width: 36rem; }
   .horizon-sun { transform: translateY(38%); }
-  .horizon { position: absolute; left: 0; right: 0; bottom: 0; height: 100%; margin: 0; }
+  .horizon { position: absolute; left: 0; right: 0; bottom: 0; height: 100%; margin: 0; clip-path: inset(-100vh -100vw 0 -100vw); } /* clip only below the horizon line */
   .horizon-sun { right: 6%; width: 380px; }
   .horizon-rings { right: calc(6% - 90px); width: 560px; }
 

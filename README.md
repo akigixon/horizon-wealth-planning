@@ -1,14 +1,14 @@
-# Horizon Wealth Planning
+# Apex Wealth Planning
 
-A one-page lead-generation site for a Singapore financial-planning firm offering retirement, investment and insurance planning.
+*Plan today, Prosper tomorrow.* A one-page lead-generation site for a Singapore financial-planning firm offering retirement, investment and insurance planning.
 
-![Horizon Wealth Planning homepage](docs/screenshot.png)
+![Apex Wealth Planning homepage](docs/screenshot.png)
 
 **Live site:** https://akigixon.github.io/horizon-wealth-planning/
 
 ## Features
 
-- **Lead generation**: a retirement gap calculator (CPF LIFE-aware, runs entirely in the browser), a gated *Singapore Retirement Readiness Checklist* with an instant thank-you page, a once-per-visit slide-in offer, a consultation enquiry form and a newsletter sign-up
+- **Lead generation**: a drag-slider retirement calculator that shows the earliest age you could retire and your savings gap (CPF LIFE from 65, runs entirely in the browser), a gated *Singapore Retirement Readiness Checklist* with an instant thank-you page, a once-per-visit slide-in offer, a consultation enquiry form and a newsletter sign-up
 - **SEO**: keyword-targeted title and headings, canonical URL, Open Graph/Twitter cards, `FinancialService` + `FAQPage` + `WebSite` structured data, an FAQ section and `sitemap.xml`
 - **Design**: copper-orange and slate theme with light and dark modes (follows the OS by default, with a toggle that remembers your choice)
 - **Security hardening**: strict Content-Security-Policy with no inline scripts, anti-clickjacking, XSS-safe rendering of user input, honeypot and timing checks against form spam, SHA-pinned GitHub Actions with Dependabot, and a deploy step that publishes an explicit allow-list of files

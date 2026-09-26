@@ -12,22 +12,22 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
 
   <!-- SEO -->
-  <title>Financial Planner Singapore | Horizon Wealth Planning</title>
+  <title>Financial Planner Singapore | Apex Wealth Planning</title>
   <meta name="description" content="Independent financial planning in Singapore: retirement and CPF planning, investments, insurance and estate plans. Use our free retirement gap calculator today.">
   <link rel="canonical" href="https://akigixon.github.io/horizon-wealth-planning/">
   <meta name="robots" content="index, follow, max-image-preview:large">
 
   <!-- Social sharing -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Horizon Wealth Planning">
+  <meta property="og:site_name" content="Apex Wealth Planning">
   <meta property="og:locale" content="en_SG">
-  <meta property="og:title" content="Financial Planner Singapore | Horizon Wealth Planning">
+  <meta property="og:title" content="Apex Wealth Planning | Plan today, Prosper tomorrow">
   <meta property="og:description" content="Find out how big your retirement gap is in two minutes, then get a plan to close it. Independent retirement, investment and insurance planning in Singapore.">
   <meta property="og:url" content="https://akigixon.github.io/horizon-wealth-planning/">
   <meta property="og:image" content="https://akigixon.github.io/horizon-wealth-planning/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Horizon Wealth Planning: an orange sun rising over a horizon line">
+  <meta property="og:image:alt" content="Apex Wealth Planning: Plan today, Prosper tomorrow">
   <meta name="twitter:card" content="summary_large_image">
 
   <!-- Theme -->
@@ -52,13 +52,14 @@
       {
         "@type": "FinancialService",
         "@id": "https://akigixon.github.io/horizon-wealth-planning/#business",
-        "name": "Horizon Wealth Planning",
+        "name": "Apex Wealth Planning",
+        "slogan": "Plan today, Prosper tomorrow.",
         "url": "https://akigixon.github.io/horizon-wealth-planning/",
         "logo": "https://akigixon.github.io/horizon-wealth-planning/assets/favicon.svg",
         "image": "https://akigixon.github.io/horizon-wealth-planning/assets/og-image.png",
         "description": "Independent financial planning in Singapore: retirement and CPF planning, investment management, insurance planning, estate planning and tax planning.",
         "telephone": "+65 6123 4567",
-        "email": "hello@horizonwealthplanning.com",
+        "email": "hello@apexwealthplanning.com",
         "address": {
           "@type": "PostalAddress",
           "streetAddress": "Level 18, 88 Market Street",
@@ -77,7 +78,7 @@
         "@type": "WebSite",
         "@id": "https://akigixon.github.io/horizon-wealth-planning/#website",
         "url": "https://akigixon.github.io/horizon-wealth-planning/",
-        "name": "Horizon Wealth Planning",
+        "name": "Apex Wealth Planning",
         "inLanguage": "en-SG",
         "publisher": { "@id": "https://akigixon.github.io/horizon-wealth-planning/#business" }
       },
@@ -129,14 +130,13 @@
        ============================================================ -->
   <header class="site-header" id="siteHeader">
     <nav class="nav container" aria-label="Main navigation">
-      <a href="#home" class="logo" translate="no" aria-label="Horizon Wealth Planning home">
+      <a href="#home" class="logo" translate="no" aria-label="Apex Wealth Planning home">
         <svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true">
-          <clipPath id="logoClip"><rect x="0" y="0" width="40" height="26"/></clipPath>
-          <circle cx="20" cy="27" r="11" fill="#E8772E" clip-path="url(#logoClip)"/>
-          <path d="M4 27h32" stroke="#E8772E" stroke-width="2.4" stroke-linecap="round"/>
-          <path d="M9 32.5h22" stroke="#B7C3C7" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M3 31 L17 9 L31 31 Z" fill="#E8772E"/>
+          <path d="M20 31 L28 19 L37 31 Z" fill="#B7C3C7"/>
+          <path d="M2 34h36" stroke="#E8772E" stroke-width="2" stroke-linecap="round"/>
         </svg>
-        Horizon Wealth
+        Apex Wealth
       </a>
 
       <div class="nav-menu" id="navMenu">
@@ -175,10 +175,10 @@
         <div class="hero-grid">
           <div>
             <p class="hero-kicker">Independent financial planners in Singapore</p>
-            <h1 class="hero-title" id="heroTitle">Know when you can stop working, and how you'll pay for the years after.</h1>
+            <h1 class="hero-title" id="heroTitle">Plan today, Prosper tomorrow.</h1>
             <p class="hero-subtitle">
-              We build retirement, CPF, investment and insurance plans around the life you want,
-              then keep them on course as life changes. Start with a two-minute estimate of your retirement gap.
+              Know when you can stop working, and how you'll pay for the years after. We build retirement, CPF,
+              investment and insurance plans around the life you want, then keep them on course as life changes.
             </p>
             <div class="hero-actions">
               <a href="#calculator" class="btn btn-primary">Check my retirement gap</a>
@@ -267,50 +267,72 @@
       <div class="container">
         <header class="section-header">
           <h2 class="section-title" id="calcTitle">How big is your retirement gap?</h2>
-          <p class="section-subtitle">Enter a few numbers to see whether your savings will pay the income you want until age 90.
-            Nothing you type leaves your browser.</p>
+          <p class="section-subtitle">Drag the sliders to see whether your savings will pay the income you want until age 90.
+            Nothing you enter leaves your browser.</p>
         </header>
 
         <div class="calc">
           <form class="calc-form" id="calcForm" novalidate aria-label="Retirement gap calculator">
             <div class="calc-field">
-              <label for="calcAge">Your age</label>
-              <div class="input-affix no-prefix"><input id="calcAge" name="age" type="number" inputmode="numeric" min="18" max="75" step="1" value="35" autocomplete="off"></div>
+              <div class="calc-field-head">
+                <label for="calcAge">Your age</label>
+                <output class="calc-value" for="calcAge" id="calcAgeValue" aria-hidden="true"></output>
+              </div>
+              <input class="calc-range" id="calcAge" name="age" type="range" min="18" max="75" step="1" value="35" data-format="age">
             </div>
             <div class="calc-field">
-              <label for="calcRetire">Retire at</label>
-              <div class="input-affix no-prefix"><input id="calcRetire" name="retireAge" type="number" inputmode="numeric" min="40" max="80" step="1" value="65" autocomplete="off"></div>
+              <div class="calc-field-head">
+                <label for="calcRetire">Retire at</label>
+                <output class="calc-value" for="calcRetire" id="calcRetireValue" aria-hidden="true"></output>
+              </div>
+              <input class="calc-range" id="calcRetire" name="retireAge" type="range" min="40" max="80" step="1" value="65" data-format="age">
             </div>
             <div class="calc-field">
-              <label for="calcSavings">Savings and investments today</label>
-              <div class="input-affix"><span aria-hidden="true">S$</span><input id="calcSavings" name="savings" type="number" inputmode="numeric" min="0" max="100000000" step="1000" value="80000" autocomplete="off"></div>
+              <div class="calc-field-head">
+                <label for="calcSavings">Savings and investments today</label>
+                <output class="calc-value" for="calcSavings" id="calcSavingsValue" aria-hidden="true"></output>
+              </div>
+              <input class="calc-range" id="calcSavings" name="savings" type="range" min="0" max="2000000" step="5000" value="80000" data-format="money">
             </div>
             <div class="calc-field">
-              <label for="calcMonthly">You save each month</label>
-              <div class="input-affix"><span aria-hidden="true">S$</span><input id="calcMonthly" name="monthly" type="number" inputmode="numeric" min="0" max="1000000" step="50" value="800" autocomplete="off"></div>
+              <div class="calc-field-head">
+                <label for="calcMonthly">You save each month</label>
+                <output class="calc-value" for="calcMonthly" id="calcMonthlyValue" aria-hidden="true"></output>
+              </div>
+              <input class="calc-range" id="calcMonthly" name="monthly" type="range" min="0" max="10000" step="50" value="800" data-format="money">
             </div>
             <div class="calc-field">
-              <label for="calcIncome">Monthly income you want in retirement</label>
-              <div class="input-affix"><span aria-hidden="true">S$</span><input id="calcIncome" name="income" type="number" inputmode="numeric" min="0" max="1000000" step="100" value="5000" autocomplete="off"></div>
+              <div class="calc-field-head">
+                <label for="calcIncome">Monthly income you want in retirement</label>
+                <output class="calc-value" for="calcIncome" id="calcIncomeValue" aria-hidden="true"></output>
+              </div>
+              <input class="calc-range" id="calcIncome" name="income" type="range" min="1000" max="20000" step="100" value="5000" data-format="money">
             </div>
             <div class="calc-field">
-              <label for="calcCpf">Expected CPF LIFE payout a month</label>
-              <div class="input-affix"><span aria-hidden="true">S$</span><input id="calcCpf" name="cpf" type="number" inputmode="numeric" min="0" max="100000" step="50" value="1500" autocomplete="off"></div>
+              <div class="calc-field-head">
+                <label for="calcCpf">Expected CPF LIFE payout a month</label>
+                <output class="calc-value" for="calcCpf" id="calcCpfValue" aria-hidden="true"></output>
+              </div>
+              <input class="calc-range" id="calcCpf" name="cpf" type="range" min="0" max="4000" step="50" value="1500" data-format="money">
             </div>
             <p class="calc-assumptions" id="calcAssumptions">
-              Figures are in today's dollars. We assume 5% yearly investment growth, 2.5% inflation and that your savings need to last until age 90.
+              Figures are in today's dollars. We assume 5% yearly investment growth, 2.5% inflation, CPF LIFE payouts from age 65 and that your savings need to last until age 90.
             </p>
             <p class="error-msg calc-field full" id="calcError" aria-live="polite"></p>
           </form>
 
           <div class="calc-result">
             <dl class="calc-figures">
+              <div class="calc-figure is-headline">
+                <dt>You could retire at</dt>
+                <dd><span id="calcEarliest">–</span> <span class="calc-figure-note" id="calcEarliestNote"></span></dd>
+              </div>
               <div class="calc-figure">
                 <dt id="projLabel">You're on track to have</dt>
                 <dd id="calcProjected">–</dd>
               </div>
               <div class="calc-figure">
-                <dt>You'll need</dt>
+                <dt id="neededLabel">You'll need</dt>
                 <dd id="calcNeeded">–</dd>
               </div>
               <div class="calc-figure is-gap">
@@ -318,7 +340,7 @@
                 <dd id="calcGap">–</dd>
               </div>
               <div class="calc-figure">
-                <dt id="extraLabel">Extra to save a month</dt>
+                <dt>Extra to save a month</dt>
                 <dd id="calcExtra">–</dd>
               </div>
             </dl>
@@ -374,7 +396,7 @@
         <div class="paper-stack" aria-hidden="true">
           <div class="paper">
             <p class="paper-title">Singapore Retirement Readiness Checklist</p>
-            <p class="paper-sub">Horizon Wealth Planning</p>
+            <p class="paper-sub">Apex Wealth Planning</p>
             <ul>
               <li class="done">Write down the monthly income you want</li>
               <li class="done">Check your CPF LIFE payout estimate</li>
@@ -448,7 +470,7 @@
                 <article class="testimonial-card">
                   <div class="stars" role="img" aria-label="Rated 5 out of 5 stars"></div>
                   <blockquote class="testimonial-quote">
-                    “Horizon turned our vague retirement dream into a clear, realistic plan. For the first time,
+                    “Apex turned our vague retirement dream into a clear, realistic plan. For the first time,
                     we know exactly when we can stop working and how we'll fund the life we want.”
                   </blockquote>
                   <div class="testimonial-author">
@@ -524,7 +546,7 @@
                 <article class="testimonial-card">
                   <div class="stars" role="img" aria-label="Rated 5 out of 5 stars"></div>
                   <blockquote class="testimonial-quote">
-                    “After my husband passed, I felt lost with our finances. The Horizon team was patient,
+                    “After my husband passed, I felt lost with our finances. The Apex team was patient,
                     compassionate and helped me build a secure income for the years ahead.”
                   </blockquote>
                   <div class="testimonial-author">
@@ -634,7 +656,7 @@
                 </span>
                 <div>
                   <h4>Email</h4>
-                  <p><a href="mailto:hello@horizonwealthplanning.com">hello@horizonwealthplanning.com</a></p>
+                  <p><a href="mailto:hello@apexwealthplanning.com">hello@apexwealthplanning.com</a></p>
                 </div>
               </li>
               <li class="info-item">
@@ -744,7 +766,7 @@
                   <label class="checkbox-wrap" id="consentWrap" for="consent">
                     <input type="checkbox" id="consent" name="consent"
                            required aria-required="true" aria-describedby="consent-error">
-                    <span>I agree to be contacted by Horizon Wealth Planning about my enquiry and understand my
+                    <span>I agree to be contacted by Apex Wealth Planning about my enquiry and understand my
                       details will be handled in line with the PDPA and our privacy policy.</span>
                   </label>
                   <span class="error-msg" id="consent-error" aria-live="polite"></span>
@@ -769,28 +791,28 @@
       <div class="footer-grid">
         <!-- Column 1: Logo & description -->
         <div class="footer-col footer-about">
-          <a href="#home" class="logo" translate="no" aria-label="Horizon Wealth Planning, back to top">
+          <a href="#home" class="logo" translate="no" aria-label="Apex Wealth Planning, back to top">
             <svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true">
-              <clipPath id="logoClipFooter"><rect x="0" y="0" width="40" height="26"/></clipPath>
-              <circle cx="20" cy="27" r="11" fill="#E8772E" clip-path="url(#logoClipFooter)"/>
-              <path d="M4 27h32" stroke="#E8772E" stroke-width="2.4" stroke-linecap="round"/>
-              <path d="M9 32.5h22" stroke="#B7C3C7" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M3 31 L17 9 L31 31 Z" fill="#E8772E"/>
+          <path d="M20 31 L28 19 L37 31 Z" fill="#B7C3C7"/>
+          <path d="M2 34h36" stroke="#E8772E" stroke-width="2" stroke-linecap="round"/>
             </svg>
-            Horizon Wealth
+            Apex Wealth
           </a>
+          <p class="footer-slogan">Plan today, Prosper tomorrow.</p>
           <p>Independent, client-first financial planning in Singapore. We help individuals and families build, protect and pass on wealth with clarity and confidence.</p>
 
           <div class="socials">
-            <a href="https://www.facebook.com" class="social-link" aria-label="Horizon Wealth Planning on Facebook" target="_blank" rel="noopener noreferrer">
+            <a href="https://www.facebook.com" class="social-link" aria-label="Apex Wealth Planning on Facebook" target="_blank" rel="noopener noreferrer">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 13.5h2.5l1-4H14v-2c0-1.03 0-2 2-2h1.5V2.14A28 28 0 0 0 14.64 2C11.93 2 10 3.66 10 6.7v2.8H7v4h3V22h4v-8.5z"/></svg>
             </a>
-            <a href="https://www.linkedin.com" class="social-link" aria-label="Horizon Wealth Planning on LinkedIn" target="_blank" rel="noopener noreferrer">
+            <a href="https://www.linkedin.com" class="social-link" aria-label="Apex Wealth Planning on LinkedIn" target="_blank" rel="noopener noreferrer">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.94 5a2 2 0 1 1-4-.002 2 2 0 0 1 4 .002zM7 8.48H3V21h4V8.48zm6.32 0H9.34V21h3.94v-6.57c0-3.66 4.77-4 4.77 0V21H22v-7.93c0-6.17-7.06-5.94-8.72-2.91l.04-1.68z"/></svg>
             </a>
-            <a href="https://www.instagram.com" class="social-link" aria-label="Horizon Wealth Planning on Instagram" target="_blank" rel="noopener noreferrer">
+            <a href="https://www.instagram.com" class="social-link" aria-label="Apex Wealth Planning on Instagram" target="_blank" rel="noopener noreferrer">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.6" fill="currentColor"/></svg>
             </a>
-            <a href="https://x.com" class="social-link" aria-label="Horizon Wealth Planning on X" target="_blank" rel="noopener noreferrer">
+            <a href="https://x.com" class="social-link" aria-label="Apex Wealth Planning on X" target="_blank" rel="noopener noreferrer">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             </a>
           </div>
@@ -842,7 +864,7 @@
     <!-- Bottom bar -->
     <div class="footer-bottom">
       <div class="container">
-        <p>© <span id="currentYear">2026</span> Horizon Wealth Planning. All rights reserved.</p>
+        <p>© <span id="currentYear">2026</span> Apex Wealth Planning. All rights reserved.</p>
         <p>This website is for general information only and does not constitute financial advice. It does not take into account your specific investment objectives, financial situation or needs. Please speak to a qualified adviser before making financial decisions.</p>
       </div>
     </div>
