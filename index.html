@@ -353,8 +353,20 @@
               </div>
               <input class="calc-range" id="calcCpf" name="cpf" type="range" min="0" max="4000" step="50" value="1500" data-format="money">
             </div>
+            <div class="calc-field calc-alloc">
+              <div class="calc-field-head">
+                <label for="calcEquity">How you invest your savings</label>
+                <output class="calc-value" for="calcEquity" id="calcEquityValue" aria-hidden="true"></output>
+              </div>
+              <input class="calc-range calc-range-split" id="calcEquity" name="equity" type="range" min="0" max="100" step="5" value="60" data-format="split" aria-describedby="calcReturn">
+              <div class="calc-split-legend" aria-hidden="true">
+                <span><i class="key key-eq"></i>Equities <b id="calcEqPct">60%</b></span>
+                <span><i class="key key-fi"></i>Fixed income <b id="calcFiPct">40%</b></span>
+              </div>
+              <p class="calc-return" id="calcReturn">Expected return 5.6% a year before inflation</p>
+            </div>
             <p class="calc-assumptions" id="calcAssumptions">
-              Figures are in today's dollars. We assume 5% yearly investment growth, 2.5% inflation, CPF LIFE payouts from age 65 and that your savings need to last until age 90.
+              Figures are in today's dollars. We assume equities grow 7% a year and fixed income 3.5% a year, your mix is rebalanced yearly and kept in retirement, inflation is 2.5%, CPF LIFE pays from age 65, and your savings need to last until age 90.
             </p>
             <p class="error-msg calc-field full" id="calcError" aria-live="polite"></p>
           </form>
@@ -383,10 +395,27 @@
               </div>
             </dl>
 
+            <div class="calc-build">
+              <p class="calc-build-title" id="buildTitle">How your fund builds up</p>
+              <div class="calc-build-bar" aria-hidden="true"><span class="seg-in" id="segIn"></span><span class="seg-growth" id="segGrowth"></span></div>
+              <dl class="calc-build-legend">
+                <div><dt><i class="key key-in"></i>Money you put in</dt><dd id="calcPutIn">–</dd></div>
+                <div><dt><i class="key key-eq"></i>Compound growth</dt><dd id="calcGrowth">–</dd></div>
+              </dl>
+              <p class="calc-build-note" id="calcGrowthShare"></p>
+            </div>
+
             <p class="calc-summary" id="calcSummary" aria-live="polite"></p>
 
             <figure class="calc-chart">
-              <svg id="calcChart" viewBox="0 0 600 260" role="img" aria-labelledby="calcSummary"></svg>
+              <svg id="calcChart" viewBox="0 0 600 300" role="img" aria-labelledby="calcSummary" aria-describedby="chartHint" tabindex="0"></svg>
+              <figcaption class="chart-legend">
+                <span><i class="key key-bal"></i>Projected savings</span>
+                <span><i class="key key-putin"></i>Money you put in</span>
+                <span><i class="key key-need"></i>Needed at retirement</span>
+              </figcaption>
+              <p class="visually-hidden" id="chartHint">Use the left and right arrow keys to read your projected savings at each age.</p>
+              <p class="visually-hidden" id="chartReadout" aria-live="polite"></p>
             </figure>
 
             <div class="calc-actions">

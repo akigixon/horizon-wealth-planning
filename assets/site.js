@@ -211,14 +211,15 @@
 
   /* ==========================================================
      6. RETIREMENT GAP CALCULATOR
-     All maths runs locally. Figures are in today's dollars using a
-     real (inflation-adjusted) monthly return.
+     All maths runs locally. Figures are in today's dollars: the growth
+     rate is the blend of equities and fixed income chosen on the
+     allocation slider, minus inflation, compounded monthly.
      ========================================================== */
-  const NOMINAL_RETURN = 0.05;
+  const EQUITY_RETURN = 0.07;        // assumed long-run yearly return on equities
+  const FIXED_INCOME_RETURN = 0.035; // assumed long-run yearly return on fixed income
   const INFLATION = 0.025;
   const PLAN_TO_AGE = 90;
-  const CPF_LIFE_AGE = 65;     // CPF LIFE payouts start at 65 at the earliest
-  const monthlyRate = Math.pow((1 + NOMINAL_RETURN) / (1 + INFLATION), 1 / 12) - 1;
+  const CPF_LIFE_AGE = 65;           // CPF LIFE payouts start at 65 at the earliest
 
   const calcForm = document.getElementById('calcForm');
   const calcError = document.getElementById('calcError');
@@ -233,15 +234,28 @@
     neededLabel: document.getElementById('neededLabel'),
     earliest: document.getElementById('calcEarliest'),
     earliestNote: document.getElementById('calcEarliestNote'),
-    summary: document.getElementById('calcSummary')
+    summary: document.getElementById('calcSummary'),
+    returnNote: document.getElementById('calcReturn'),
+    eqPct: document.getElementById('calcEqPct'),
+    fiPct: document.getElementById('calcFiPct'),
+    buildTitle: document.getElementById('buildTitle'),
+    putIn: document.getElementById('calcPutIn'),
+    growth: document.getElementById('calcGrowth'),
+    growthShare: document.getElementById('calcGrowthShare'),
+    segIn: document.getElementById('segIn'),
+    segGrowth: document.getElementById('segGrowth'),
+    readout: document.getElementById('chartReadout')
   };
 
   const numberFmt = new Intl.NumberFormat('en-SG', { maximumFractionDigits: 0 });
   const compactFmt = new Intl.NumberFormat('en-SG', { notation: 'compact', maximumFractionDigits: 1 });
+  const pctFmt = new Intl.NumberFormat('en-SG', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const money = n => 'S$' + numberFmt.format(Math.max(0, Math.round(n)));
   const moneyShort = n => 'S$' + compactFmt.format(Math.max(0, n));
 
-  let lastResult = null;
+  // Blended yearly return for an equity share (0–1), and the real monthly rate used for compounding
+  const blendedReturn = equityShare => equityShare * EQUITY_RETURN + (1 - equityShare) * FIXED_INCOME_RETURN;
+  const realMonthlyRate = nominal => Math.pow((1 + nominal) / (1 + INFLATION), 1 / 12) - 1;
 
   function readInputs() {
     const num = name => {
@@ -250,13 +264,17 @@
       if (input.value === '' || !Number.isFinite(value)) return NaN;
       return Math.min(Math.max(value, Number(input.min)), Number(input.max));
     };
+    const equity = num('equity') / 100;
     return {
       age: Math.round(num('age')),
       retireAge: Math.round(num('retireAge')),
       savings: num('savings'),
       monthly: num('monthly'),
       income: num('income'),
-      cpf: num('cpf')
+      cpf: num('cpf'),
+      equity,
+      nominalReturn: blendedReturn(equity),
+      rate: realMonthlyRate(blendedReturn(equity))
     };
   }
 
@@ -268,6 +286,7 @@
 
   function formatSlider(input) {
     const value = Number(input.value);
+    if (input.dataset.format === 'split') return `${value}% equities, ${100 - value}% fixed income`;
     const atMax = value >= Number(input.max) ? '+' : ''; // e.g. "S$2,000,000+" for larger balances
     return input.dataset.format === 'money' ? money(value) + atMax : `${value} years`;
   }
@@ -276,9 +295,16 @@
     const pct = (Number(input.value) - Number(input.min)) / (Number(input.max) - Number(input.min)) * 100;
     input.style.setProperty('--fill', `${pct}%`);
     const text = formatSlider(input);
+    const format = input.dataset.format;
     document.getElementById(`${input.id}Value`).textContent =
-      input.dataset.format === 'money' ? text : input.value;
+      format === 'money' ? text : format === 'split' ? `${input.value} / ${100 - input.value}` : input.value;
     input.setAttribute('aria-valuetext', text);
+    if (format === 'split') {
+      out.eqPct.textContent = `${input.value}%`;
+      out.fiPct.textContent = `${100 - input.value}%`;
+      out.returnNote.textContent =
+        `Expected return ${pctFmt.format(blendedReturn(input.value / 100))} a year before inflation`;
+    }
   }
 
   // Retirement must stay after today's age: moving one slider nudges the other
@@ -301,10 +327,10 @@
     return Math.max(0, v.income - cpf);
   }
 
-  // Savings you'd have at age `retireAge` if you keep saving until then
+  // Savings you'd have at age `retireAge` if you keep saving until then (compounded monthly)
   function balanceAt(v, retireAge) {
-    const growth = Math.pow(1 + monthlyRate, (retireAge - v.age) * 12);
-    return v.savings * growth + v.monthly * (growth - 1) / monthlyRate;
+    const growth = Math.pow(1 + v.rate, (retireAge - v.age) * 12);
+    return v.savings * growth + v.monthly * (growth - 1) / v.rate;
   }
 
   // Lump sum needed at `retireAge` to fund withdrawals until PLAN_TO_AGE
@@ -312,7 +338,7 @@
     let total = 0;
     let discount = 1;
     for (let m = retireAge * 12; m < PLAN_TO_AGE * 12; m++) {
-      discount /= 1 + monthlyRate;
+      discount /= 1 + v.rate;
       total += withdrawalAt(v, m) * discount;
     }
     return total;
@@ -340,25 +366,28 @@
     const points = [{ age: v.age, balance: v.savings }];
     let balance = v.savings;
     for (let m = 1; m <= monthsToRetire; m++) {
-      balance = balance * (1 + monthlyRate) + v.monthly;
+      balance = balance * (1 + v.rate) + v.monthly;
       if (m % 12 === 0) points.push({ age: v.age + m / 12, balance });
     }
     const projected = balance;
 
     let runOutAge = null;
     for (let m = v.retireAge * 12; m < PLAN_TO_AGE * 12; m++) {
-      balance = balance * (1 + monthlyRate) - withdrawalAt(v, m);
+      balance = balance * (1 + v.rate) - withdrawalAt(v, m);
       if (balance <= 0 && runOutAge === null) runOutAge = Math.floor((m + 1) / 12);
       if ((m + 1) % 12 === 0) points.push({ age: (m + 1) / 12, balance: Math.max(0, balance) });
     }
 
     const needed = neededAt(v, v.retireAge);
     const gap = needed - projected;
-    const growth = (Math.pow(1 + monthlyRate, monthsToRetire) - 1) / monthlyRate;
-    const extraMonthly = gap > 0 ? gap / growth : 0;
+    const growthFactor = (Math.pow(1 + v.rate, monthsToRetire) - 1) / v.rate;
+    const extraMonthly = gap > 0 ? gap / growthFactor : 0;
     const earliest = earliestRetirementAge(v);
 
-    lastResult = { v, points, projected, needed, gap, runOutAge, earliest };
+    // Compounding effect: what you put in vs what investment growth adds
+    const putIn = v.savings + v.monthly * monthsToRetire;
+    const growthAmount = Math.max(0, projected - putIn);
+    const growthShare = projected > 0 ? growthAmount / projected : 0;
 
     // Headline: the earliest age you could retire
     if (earliest === null) {
@@ -378,17 +407,26 @@
     const cpfNote = v.retireAge < CPF_LIFE_AGE
       ? `, with CPF LIFE adding ${money(v.cpf)} a month from ${CPF_LIFE_AGE}`
       : ` including your ${money(v.cpf)} CPF LIFE payout`;
+    const mixNote = `With ${Math.round(v.equity * 100)}% in equities and ${Math.round((1 - v.equity) * 100)}% in fixed income ` +
+      `(about ${pctFmt.format(v.nominalReturn)} a year), compound growth adds ${money(growthAmount)} to the ${money(putIn)} you put in. `;
 
-    out.projLabel.textContent = `At ${v.retireAge} you're on track to have`;
+    out.projLabel.textContent = `Your retirement fund at ${v.retireAge}`;
     out.projected.textContent = money(projected);
     out.neededLabel.textContent = `You'll need at ${v.retireAge}`;
     out.needed.textContent = money(needed);
+
+    out.buildTitle.textContent = `How your ${money(projected)} builds up by ${v.retireAge}`;
+    out.putIn.textContent = money(putIn);
+    out.growth.textContent = money(growthAmount);
+    out.growthShare.textContent = `${Math.round(growthShare * 100)}% of your fund comes from compounding`;
+    out.segIn.style.flexGrow = String(Math.max(0.0001, 1 - growthShare));
+    out.segGrowth.style.flexGrow = String(Math.max(0.0001, growthShare));
 
     if (gap > 0) {
       out.gapLabel.textContent = 'Your gap';
       out.gap.textContent = money(gap);
       out.extra.textContent = money(extraMonthly);
-      out.summary.textContent =
+      out.summary.textContent = mixNote +
         `At your current pace, the earliest you could retire is ${earliestText}. ` +
         `If you retire at ${v.retireAge}, your savings would run out around age ${runOutAge}. ` +
         `To have ${money(v.income)} a month until ${PLAN_TO_AGE}${cpfNote}, you'd need about ${money(needed)} ` +
@@ -398,16 +436,22 @@
       out.gapLabel.textContent = 'Your surplus';
       out.gap.textContent = money(-gap);
       out.extra.textContent = money(0);
-      out.summary.textContent =
+      out.summary.textContent = mixNote +
         `You're on track, and you could retire as early as ${earliest === v.age ? 'now' : `age ${earliest}`}. ` +
-        `Retiring at ${v.retireAge}, your projected ${money(projected)} covers the ${money(needed)} needed for ` +
+        `Retiring at ${v.retireAge}, your fund covers the ${money(needed)} needed for ` +
         `${money(v.income)} a month until ${PLAN_TO_AGE}${cpfNote}, leaving ${money(-gap)} to spare.`;
     }
 
-    drawChart();
+    chart.update({ v, points, projected, needed, earliest });
   }
 
-  // Builds the chart with DOM methods (no innerHTML), so no markup injection is possible
+  /* ----------------------------------------------------------
+     6b. Animated chart
+     The data is resampled to a fixed number of points so any two
+     states can be tweened smoothly while sliders move. It draws
+     itself in the first time it scrolls into view. Built with DOM
+     methods only (no innerHTML), so no markup injection is possible.
+     ---------------------------------------------------------- */
   const SVG_NS = 'http://www.w3.org/2000/svg';
   function svgEl(tag, attrs, text) {
     const el = document.createElementNS(SVG_NS, tag);
@@ -416,52 +460,256 @@
     return el;
   }
 
-  function drawChart() {
-    if (!lastResult) return;
-    const { v, points, needed } = lastResult;
-    const W = 600, H = 260, padL = 56, padR = 12, padT = 16, padB = 30;
-    const maxBalance = Math.max(needed, ...points.map(p => p.balance)) * 1.1 || 1;
-    const x = age => padL + (age - v.age) / (PLAN_TO_AGE - v.age) * (W - padL - padR);
-    const y = val => H - padB - (val / maxBalance) * (H - padT - padB);
+  const chart = (() => {
+    const W = 600, H = 300, padR = 18, padB = 34;
+    let padL = 60;
+    let padT = 34;
+    let k = 1; // label scale: the SVG shrinks on phones, so its text and pills grow to stay readable
+    const SAMPLES = 121;
+    const TWEEN_MS = 520;
+    let shown = null;      // state currently on screen
+    let target = null;     // state we're animating towards
+    let tweenFrom = null;
+    let tweenStart = 0;
+    let frame = 0;
+    let hoverAge = null;
+    let introState = 'pending'; // pending -> playing -> done
 
-    calcChart.replaceChildren();
+    // Rounds the axis maximum up to a tidy number (1, 2, 2.5 or 5 x 10^n)
+    function niceCeil(value) {
+      if (value <= 0) return 1;
+      const exp = Math.pow(10, Math.floor(Math.log10(value)));
+      const f = value / exp;
+      const nice = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+      return nice * exp;
+    }
 
-    // Gridlines + y labels
-    [0, 0.5, 1].forEach(f => {
-      const val = maxBalance / 1.1 * f;
-      calcChart.appendChild(svgEl('line', { class: 'chart-grid', x1: padL, x2: W - padR, y1: y(val), y2: y(val) }));
-      calcChart.appendChild(svgEl('text', { class: 'chart-axis-label', x: padL - 8, y: y(val) + 4, 'text-anchor': 'end' }, moneyShort(val)));
+    function toState(r) {
+      const { v, points } = r;
+      const bal = [];
+      const putIn = [];
+      const span = PLAN_TO_AGE - v.age;
+      for (let i = 0; i < SAMPLES; i++) {
+        const age = v.age + span * i / (SAMPLES - 1);
+        const k = Math.min(points.length - 2, Math.floor(age - v.age));
+        const a = points[k], b = points[k + 1];
+        const t = Math.min(1, Math.max(0, age - a.age));
+        bal.push(a.balance + (b.balance - a.balance) * t);
+        const years = Math.min(age, v.retireAge) - v.age;
+        putIn.push(v.savings + v.monthly * 12 * years);
+      }
+      const peak = Math.max(r.needed, ...bal);
+      return {
+        startAge: v.age, retireAge: v.retireAge, earliest: r.earliest,
+        needed: r.needed, projected: r.projected, maxY: niceCeil(peak * 1.08),
+        bal, putIn
+      };
+    }
+
+    const ease = t => 1 - Math.pow(1 - t, 3);
+    const lerp = (a, b, t) => a + (b - a) * t;
+
+    function mix(a, b, t) {
+      return {
+        startAge: lerp(a.startAge, b.startAge, t),
+        retireAge: lerp(a.retireAge, b.retireAge, t),
+        earliest: b.earliest,
+        needed: lerp(a.needed, b.needed, t),
+        projected: lerp(a.projected, b.projected, t),
+        maxY: lerp(a.maxY, b.maxY, t),
+        bal: a.bal.map((x, i) => lerp(x, b.bal[i], t)),
+        putIn: a.putIn.map((x, i) => lerp(x, b.putIn[i], t))
+      };
+    }
+
+    function render(s) {
+      k = calcChart.clientWidth && calcChart.clientWidth < 480 ? 1.65 : 1;
+      padL = k > 1 ? 86 : 60;
+      padT = k > 1 ? 50 : 34;
+      calcChart.classList.toggle('is-compact', k > 1);
+      const span = PLAN_TO_AGE - s.startAge;
+      const x = age => padL + (age - s.startAge) / span * (W - padL - padR);
+      const y = val => H - padB - Math.max(0, val) / s.maxY * (H - padT - padB);
+      const ageAt = i => s.startAge + span * i / (SAMPLES - 1);
+      const base = y(0);
+      const f = n => n.toFixed(1);
+
+      calcChart.replaceChildren();
+
+      // Gradient under the balance line
+      const defs = svgEl('defs', {});
+      const grad = svgEl('linearGradient', { id: 'chartFill', x1: 0, y1: 0, x2: 0, y2: 1 });
+      grad.append(svgEl('stop', { offset: '0%', class: 'chart-stop-top' }), svgEl('stop', { offset: '100%', class: 'chart-stop-bottom' }));
+      defs.append(grad);
+      calcChart.append(defs);
+
+      // Retirement zone
+      const rx = x(s.retireAge);
+      calcChart.append(svgEl('rect', { class: 'chart-zone', x: f(rx), y: padT, width: f(W - padR - rx), height: f(base - padT) }));
+      calcChart.append(svgEl('text', { class: 'chart-zone-label', x: f(W - padR - 8), y: f(padT + 14 * k), 'text-anchor': 'end' }, 'Retirement'));
+
+      // Grid + y labels
+      for (let g = 0; g <= 4; g++) {
+        const val = s.maxY * g / 4;
+        calcChart.append(svgEl('line', { class: g ? 'chart-grid' : 'chart-baseline', x1: padL, x2: W - padR, y1: f(y(val)), y2: f(y(val)) }));
+        calcChart.append(svgEl('text', { class: 'chart-axis-label', x: padL - 10, y: f(y(val) + 4), 'text-anchor': 'end' }, moneyShort(val)));
+      }
+
+      // X labels every 10 years (plus today's age)
+      const start = Math.round(s.startAge);
+      calcChart.append(svgEl('text', { class: 'chart-axis-label', x: f(x(s.startAge)), y: f(H - 10 + 4 * (k - 1)), 'text-anchor': 'start' }, `Age ${start}`));
+      for (let a = Math.ceil((s.startAge + (k > 1 ? 11 : 7)) / 10) * 10; a <= PLAN_TO_AGE; a += 10) {
+        calcChart.append(svgEl('text', { class: 'chart-axis-label', x: f(x(a)), y: f(H - 10 + 4 * (k - 1)), 'text-anchor': a === PLAN_TO_AGE ? 'end' : 'middle' }, String(a)));
+      }
+
+      // Balance area + line
+      const pts = s.bal.map((b, i) => `${f(x(ageAt(i)))},${f(y(b))}`);
+      const linePath = 'M' + pts.join(' L');
+      calcChart.append(svgEl('path', { class: 'chart-area', d: `${linePath} L${f(W - padR)},${f(base)} L${f(padL)},${f(base)} Z` }));
+
+      // Money you put in (only while you're still saving)
+      const inPts = [];
+      for (let i = 0; i < SAMPLES && ageAt(i) <= s.retireAge + 0.001; i++) inPts.push(`${f(x(ageAt(i)))},${f(y(s.putIn[i]))}`);
+      if (inPts.length > 1) calcChart.append(svgEl('path', { class: 'chart-putin', d: 'M' + inPts.join(' L') }));
+
+      calcChart.append(svgEl('path', { class: 'chart-line', d: linePath, pathLength: 1 }));
+
+      // Needed at retirement
+      const needY = y(s.needed);
+      calcChart.append(svgEl('line', { class: 'chart-need chart-mark', x1: padL, x2: f(rx), y1: f(needY), y2: f(needY) }));
+      calcChart.append(svgEl('text', { class: 'chart-need-label chart-mark', x: padL + 8, y: f(needY - 8 * k) },
+        `Needed at ${Math.round(s.retireAge)}: ${moneyShort(s.needed)}`));
+
+      // Earliest possible retirement
+      if (s.earliest !== null && s.earliest > s.startAge + 0.5) {
+        const ex = x(s.earliest);
+        calcChart.append(svgEl('line', { class: 'chart-earliest chart-mark', x1: f(ex), x2: f(ex), y1: padT - 4, y2: f(base) }));
+        const label = `Earliest: ${s.earliest}`;
+        const w = (label.length * 6.4 + 16) * k;
+        const lx = Math.min(Math.max(ex - w / 2, padL), W - padR - w);
+        const g = svgEl('g', { class: 'chart-mark' });
+        g.append(svgEl('rect', { class: 'chart-pill-earliest', x: f(lx), y: f(padT - 6 - 20 * k), width: f(w), height: f(20 * k), rx: f(10 * k) }),
+          svgEl('text', { class: 'chart-pill-text', x: f(lx + w / 2), y: f(padT - 6 - 6 * k), 'text-anchor': 'middle' }, label));
+        calcChart.append(g);
+      }
+
+      // Peak: the retirement fund, with a halo and a label
+      const py = y(s.projected);
+      const peak = svgEl('g', { class: 'chart-mark chart-peak' });
+      const plabel = `${moneyShort(s.projected)} at ${Math.round(s.retireAge)}`;
+      const pw = (plabel.length * 6.6 + 18) * k;
+      const ph = 22 * k;
+      const plx = Math.min(Math.max(rx - pw / 2, padL), W - padR - pw);
+      let ply = Math.max(padT + 2, py - 12 - ph);
+      // If the pill would sit on top of the "Needed at" label, drop it below the point instead
+      const needText = `Needed at ${Math.round(s.retireAge)}: ${moneyShort(s.needed)}`;
+      const nx2 = padL + 8 + needText.length * 6.3 * k;
+      const ny1 = needY - 8 * k - 13 * k, ny2 = needY - 8 * k + 3;
+      if (plx < nx2 && ply < ny2 && ply + ph > ny1) ply = Math.min(py + 14, base - ph - 4);
+      peak.append(
+        svgEl('circle', { class: 'chart-halo', cx: f(rx), cy: f(py), r: 10 }),
+        svgEl('circle', { class: 'chart-dot', cx: f(rx), cy: f(py), r: 5 }),
+        svgEl('rect', { class: 'chart-pill', x: f(plx), y: f(ply), width: f(pw), height: f(ph), rx: f(ph / 2) }),
+        svgEl('text', { class: 'chart-pill-text chart-pill-text-dark', x: f(plx + pw / 2), y: f(ply + ph * 0.68), 'text-anchor': 'middle' }, plabel)
+      );
+      calcChart.append(peak);
+
+      // Hover / keyboard readout
+      if (hoverAge !== null && hoverAge >= s.startAge) {
+        const i = Math.round((hoverAge - s.startAge) / span * (SAMPLES - 1));
+        const val = s.bal[Math.min(SAMPLES - 1, Math.max(0, i))];
+        const hx = x(hoverAge), hy = y(val);
+        const tip = svgEl('g', { class: 'chart-tip' });
+        const tw = 118 * k, th = 40 * k;
+        const tx = hx + 12 + tw > W - padR ? hx - 12 - tw : hx + 12;
+        const ty = Math.min(Math.max(hy - th - 6, padT), base - th - 6);
+        tip.append(
+          svgEl('line', { class: 'chart-tip-line', x1: f(hx), x2: f(hx), y1: padT, y2: f(base) }),
+          svgEl('circle', { class: 'chart-dot', cx: f(hx), cy: f(hy), r: 5 }),
+          svgEl('rect', { class: 'chart-tip-box', x: f(tx), y: f(ty), width: f(tw), height: f(th), rx: 8 }),
+          svgEl('text', { class: 'chart-tip-age', x: f(tx + 10 * k), y: f(ty + 16 * k) }, `Age ${hoverAge}`),
+          svgEl('text', { class: 'chart-tip-value', x: f(tx + 10 * k), y: f(ty + 32 * k) }, money(val))
+        );
+        calcChart.append(tip);
+      }
+    }
+
+    function step(now) {
+      const t = Math.min(1, (now - tweenStart) / TWEEN_MS);
+      shown = mix(tweenFrom, target, ease(t));
+      render(shown);
+      if (t < 1) frame = requestAnimationFrame(step);
+    }
+
+    function update(result) {
+      target = toState(result);
+      cancelAnimationFrame(frame);
+      if (introState === 'playing') finishIntro();
+      if (!shown || prefersReducedMotion || introState === 'pending') {
+        shown = target;
+        render(shown);
+        return;
+      }
+      tweenFrom = shown;
+      tweenStart = performance.now();
+      frame = requestAnimationFrame(step);
+    }
+
+    function finishIntro() {
+      introState = 'done';
+      calcChart.classList.remove('is-pending', 'is-intro');
+    }
+
+    // Draw-in the first time the chart is seen
+    if (prefersReducedMotion) {
+      introState = 'done';
+    } else {
+      calcChart.classList.add('is-pending');
+      new IntersectionObserver((entries, obs) => {
+        if (!entries[0].isIntersecting) return;
+        obs.disconnect();
+        introState = 'playing';
+        calcChart.classList.remove('is-pending');
+        calcChart.classList.add('is-intro');
+        setTimeout(() => { if (introState === 'playing') finishIntro(); }, 2200);
+      }, { threshold: 0.45 }).observe(calcChart);
+    }
+
+    // Hover or touch to read the balance at any age
+    function balanceFor(age) {
+      const i = Math.round((age - shown.startAge) / (PLAN_TO_AGE - shown.startAge) * (SAMPLES - 1));
+      return shown.bal[Math.min(SAMPLES - 1, Math.max(0, i))];
+    }
+
+    function setHover(age) {
+      hoverAge = age;
+      if (shown) render(shown);
+      out.readout.textContent = age === null || !shown ? '' : `Age ${age}: ${money(balanceFor(age))}`;
+    }
+
+    calcChart.addEventListener('pointermove', e => {
+      if (!shown || introState === 'playing') return;
+      const r = calcChart.getBoundingClientRect();
+      const vx = (e.clientX - r.left) / r.width * W;
+      const age = Math.round(shown.startAge + (vx - padL) / (W - padL - padR) * (PLAN_TO_AGE - shown.startAge));
+      setHover(Math.min(PLAN_TO_AGE, Math.max(Math.round(shown.startAge), age)));
+    });
+    calcChart.addEventListener('pointerleave', () => setHover(null));
+    calcChart.addEventListener('blur', () => setHover(null));
+    calcChart.addEventListener('keydown', e => {
+      if (!shown || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+      e.preventDefault();
+      const startAge = Math.round(shown.startAge);
+      const current = hoverAge === null ? Math.round(shown.retireAge) : hoverAge;
+      setHover(Math.min(PLAN_TO_AGE, Math.max(startAge, current + (e.key === 'ArrowRight' ? 1 : -1))));
     });
 
-    // X labels every 10 years
-    const firstTick = Math.ceil(v.age / 10) * 10;
-    for (let a = firstTick; a <= PLAN_TO_AGE; a += 10) {
-      calcChart.appendChild(svgEl('text', { class: 'chart-axis-label', x: x(a), y: H - 8, 'text-anchor': 'middle' }, String(a)));
-    }
+    window.addEventListener('resize', () => { if (shown) render(shown); });
 
-    // Planned retirement marker
-    calcChart.appendChild(svgEl('line', { class: 'chart-retire', x1: x(v.retireAge), x2: x(v.retireAge), y1: padT, y2: H - padB }));
+    return { update, redraw: () => { if (shown) render(shown); } };
+  })();
 
-    // Earliest possible retirement marker
-    const { earliest } = lastResult;
-    if (earliest !== null && earliest > v.age) {
-      const ex = x(earliest);
-      calcChart.appendChild(svgEl('line', { class: 'chart-earliest', x1: ex, x2: ex, y1: padT + 18, y2: H - padB }));
-      calcChart.appendChild(svgEl('text', { class: 'chart-earliest-label', x: ex, y: padT + 10, 'text-anchor': ex > W - 90 ? 'end' : 'middle' }, `Earliest: ${earliest}`));
-    }
-
-    // Balance area + line
-    const linePath = points.map((p, i) => `${i ? 'L' : 'M'}${x(p.age).toFixed(1)},${y(p.balance).toFixed(1)}`).join(' ');
-    const last = points[points.length - 1];
-    const areaPath = `${linePath} L${x(last.age).toFixed(1)},${y(0)} L${x(points[0].age).toFixed(1)},${y(0)} Z`;
-    calcChart.appendChild(svgEl('path', { class: 'chart-area', d: areaPath }));
-    calcChart.appendChild(svgEl('path', { class: 'chart-line', d: linePath }));
-
-    // What you need at retirement
-    const needY = y(needed);
-    calcChart.appendChild(svgEl('line', { class: 'chart-need', x1: padL, x2: x(v.retireAge), y1: needY, y2: needY }));
-    calcChart.appendChild(svgEl('text', { class: 'chart-need-label', x: padL + 6, y: needY - 8 }, `Needed at ${v.retireAge}: ${moneyShort(needed)}`));
-  }
+  function drawChart() { chart.redraw(); }
 
   let calcFrame = 0;
   calcForm.addEventListener('input', e => {
