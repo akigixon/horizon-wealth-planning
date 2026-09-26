@@ -32,10 +32,23 @@ Report findings as a short table: severity, file:line, issue, fix.
 - **Medium or low**: fix them if the fix is trivial and safe (e.g. `.gitignore` entries, `rel="noopener"`). Otherwise list them and ask the user whether to continue.
 - If the scan is clean, say so in one line and continue.
 
-## 2. README.md
+## 2. Screenshot (Playwright MCP)
+
+Capture a fresh screenshot of the site for the README, using the `playwright` MCP server from `.mcp.json` (`mcp__playwright__*` tools).
+
+1. If the Playwright tools aren't available (the server failed to connect), tell the user. The usual cause is Node.js missing: `@playwright/mcp` runs via `npx`, so they need `winget install OpenJS.NodeJS.LTS` and a Claude restart. Ask whether to skip the screenshot (keep the existing `docs/screenshot.png` if there is one) or stop. Don't substitute another tool without asking.
+2. Serve the working tree so the screenshot shows what's about to be pushed, not the old live site: start `python -m http.server 8765 --bind 127.0.0.1` in the repo root in the background. If port 8765 is already in use (another program may be listening there and would answer with its own 404), pick a free port instead and don't stop the other process.
+3. `browser_resize` to 1440×900, `browser_navigate` to `http://127.0.0.1:<port>/` (retry once if the server isn't up yet), wait about 2 seconds for fonts, the hero image and the stat counters to settle, then `browser_take_screenshot` of the viewport (not full page; the `.reveal` sections below the fold are hidden until scrolled). Save it as `docs/screenshot.png`, moving the file there if the tool writes it to its own output folder.
+4. Look at the image before using it. If the hero image or fonts didn't load, retake it.
+5. `browser_close` and stop the HTTP server.
+
+`docs/` is not copied into `_site`, which is correct: the screenshot is only for the README. Playwright's own logs go to `.playwright-mcp/`, which is gitignored.
+
+## 3. README.md
 
 Create `README.md`, or update it if it exists (keep any sections the user wrote and refresh the stale ones). Base it on `index.html` and `CLAUDE.md`. It should include:
 - Title and one-line description (Horizon Wealth Planning: a one-page marketing site for a financial-planning firm)
+- The screenshot directly under the description: `![Horizon Wealth Planning homepage](docs/screenshot.png)`
 - A **Live site** link: `https://<owner>.github.io/<repo>/` (lowercase owner)
 - Features: responsive mobile-first layout, scroll reveal, animated stat counters, testimonial carousel, validated enquiry form with a simulated submission, accessibility (reduced motion, screen-reader text, `inert` slides)
 - Tech: plain HTML/CSS/vanilla JS, no build step, Google Fonts only
@@ -45,17 +58,17 @@ Create `README.md`, or update it if it exists (keep any sections the user wrote 
 
 Keep it concise. Don't add badges or claims that can't be checked.
 
-## 3. GitHub Pages workflow
+## 4. GitHub Pages workflow
 
 Make sure `.github/workflows/deploy-pages.yml` exists and is correct: it triggers on push to `main` plus `workflow_dispatch`, has minimal `permissions` (`contents: read`, `pages: write`, `id-token: write`), and uses `actions/checkout`, `actions/configure-pages`, `actions/upload-pages-artifact` and `actions/deploy-pages`. Its "Prepare site files" step must copy **every** file the site needs (look at `index.html` for local `src`/`href` references and add any that are missing). Don't copy `README.md`, `CLAUDE.md` or `.claude/` into `_site`. Create the workflow if it's missing.
 
-## 4. Commit and push
+## 5. Commit and push
 
-1. Show `git status` and the list of files to be committed. Stage specific paths, not `git add -A`, so nothing flagged in step 1 gets in.
+1. Show `git status` and the list of files to be committed (include `docs/screenshot.png` if it changed). Stage specific paths, not `git add -A`, so nothing flagged in step 1 gets in.
 2. Commit. Use `$ARGUMENTS` as the message if given; otherwise write a concise message that summarises the change. End it with the co-author attribution line required by the current session instructions, if there is one.
 3. `git push origin main` (add `-u` if there's no upstream). Never force-push. If the push is rejected, stop and report it instead of rebasing or overwriting.
 
-## 5. Enable Pages (source = GitHub Actions)
+## 6. Enable Pages (source = GitHub Actions)
 
 ```
 gh api repos/OWNER/REPO/pages
@@ -65,7 +78,7 @@ gh api repos/OWNER/REPO/pages
 
 If the first workflow run failed because Pages wasn't enabled yet, re-run it with `gh workflow run deploy-pages.yml`.
 
-## 6. Repo About (description, website, topics)
+## 7. Repo About (description, website, topics)
 
 ```
 gh repo edit OWNER/REPO \
@@ -75,18 +88,18 @@ gh repo edit OWNER/REPO \
 ```
 If a description already exists and the user clearly wrote it, keep it and only set the homepage and topics. Setting `--homepage` is what puts the Pages link in the repo's About panel.
 
-## 7. Verify
+## 8. Verify
 
 1. Find the triggered run: `gh run list --workflow deploy-pages.yml --limit 1`. Then `gh run watch <id> --exit-status` (run it in the background if your tools allow). If it fails, show `gh run view <id> --log-failed` and diagnose.
 2. Get the live URL from `gh api repos/OWNER/REPO/pages --jq .html_url` and check that it returns HTTP 200 (`curl -sI <url>`). The first deploy can take a minute or two to go live.
 3. Confirm the About panel: `gh repo view OWNER/REPO --json description,homepageUrl,repositoryTopics`.
 
-## 8. Summary
+## 9. Summary
 
 Finish with a short report:
 - Security scan result (clean, or what was fixed or accepted)
 - Commit SHA pushed
-- README created or updated
+- Screenshot captured (or skipped) and README created or updated
 - About description, homepage and topics set
 - Workflow run status and the live Pages URL
 - Anything that still needs the user to act

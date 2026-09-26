@@ -2,6 +2,8 @@
 
 A one-page marketing site for a financial-planning firm offering retirement, investment and insurance planning.
 
+![Horizon Wealth Planning homepage](docs/screenshot.png)
+
 **Live site:** https://akigixon.github.io/horizon-wealth-planning/
 
 ## Features
