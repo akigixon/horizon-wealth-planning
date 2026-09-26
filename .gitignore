@@ -1,0 +1,13 @@
+# Secrets and local environment
+.env
+.env.*
+*.pem
+*.key
+.claude/settings.local.json
+
+# OS / editor junk
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
